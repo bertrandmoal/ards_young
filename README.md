@@ -18,12 +18,11 @@ This repository performs ards young analysis on data at different sites and repo
 
  - Option 2 : Your institution is using a different procedure classification
 
-               Map the local procedure code to the PROC-ICD10 in the google sheet 
+Map the local procedure code to the PROC-ICD10 in the google sheet 
+https://docs.google.com/spreadsheets/d/1MSp2_h2f9F3wMc6iLg85nZwhkCHGiMrV8gM8s7rSaP4/edit#gid=0
 
-               https://docs.google.com/spreadsheets/d/1MSp2_h2f9F3wMc6iLg85nZwhkCHGiMrV8gM8s7rSaP4/edit#gid=0
-
-               In your LocalPatientObservations.csv replace your local code by the one from the ICD-10-PCS Procedure classification
-               Do not forget to add the concept_type ="PROC-ICD10"
+In your LocalPatientObservations.csv replace your local code by the one from the ICD-10-PCS Procedure classification
+Do not forget to add the concept_type ="PROC-ICD10"
 
 => Go to the next section 
 
