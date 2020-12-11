@@ -77,15 +77,15 @@ For the analysis, 6 groups were considered:
 In addition, the distinction between patients included between Januray and July vs August and December was done 
 
 There will be 5 outputs:
-- ards_young_{sitei}.html 
-- ards_young_day_{sitei}.csv
-- ards_young_gen_{sitei}.csv
-- ards_young_lab_{sitei}.csv
-- ards_young_proc_diag_med_{sitei}.csv
+- ards_young-{sitei}.html 
+- ards_young_day-{sitei}.csv
+- ards_young_gen-{sitei}.csv
+- ards_young_lab-{sitei}.csv
+- ards_young_proc_diag_med-{sitei}.csv
 
-ards_young_day_{sitei}.csv : number of patient by day and by groups 
+ards_young_day-{sitei}.csv : number of patient by day and by groups 
 
-ards_young_gen_{sitei}.csv by groups
+ards_young_gen-{sitei}.csv by groups
 - number of patient, in total, by age groups and by sex 
 - mean and std of number of ICD10/9, Medication, Procedure and Loinc code
 - mean and std length of stay 
@@ -94,10 +94,10 @@ ards_young_gen_{sitei}.csv by groups
 - number of patient with a rehospitalization 
 - number of dead, dead in less than 28 and 90 days, out the hopistal in less than 28 and 90 days
 
-ards_young_lab_{sitei}.csv : number, mean, and std lab by day and by groups 
+ards_young_lab-{sitei}.csv : number, mean, and std lab by day and by groups 
 
-ards_young_proc_diag_med{sitei}.csv :number of patients with ICD10/9, medication, procedure by groups 
+ards_young_proc_diag_med-{sitei}.csv :number of patients with ICD10/9, medication, procedure by groups 
 
 Finally, please upload your results (in [`results/`](results/) via a [pull request] or request @bertrandmoal to add you as a contributor.
 
-If you run into any problem adapting this code to your data, let us (@bertrandmoal) know via Slack
+If you run into any problem adapting this code to your data, let me  know via Slack (@bertrandmoal)
