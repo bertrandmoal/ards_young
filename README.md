@@ -16,19 +16,19 @@ This repository performs ards young analysis on data at different sites and repo
 => Go to the next section 
 
 
- - Option 2 : Your institution is using a different procedure classification 
+ - Option 2 : Your institution is using a different procedure classification
 
                Map the local procedure code to the PROC-ICD10 in the google sheet 
+
                https://docs.google.com/spreadsheets/d/1MSp2_h2f9F3wMc6iLg85nZwhkCHGiMrV8gM8s7rSaP4/edit#gid=0
 
                In your LocalPatientObservations.csv replace your local code by the one from the ICD-10-PCS Procedure classification
-
                Do not forget to add the concept_type ="PROC-ICD10"
 
 => Go to the next section 
 
 ### Blood gas 
-Make sur that the Pa02(loinc 2703-7) and PaC02 (loinc 2703-7) are included in your LocalPatientObservations.csv file
+Make sur that the Pa02(loinc 2703-7) and PaC02 (loinc 2703-7) are included in your LocalPatientObservations.csv file (Phase 2)
 
 ### QC analysis: 
 Validate  the QC analysis for the your phase 2 and 1 files
@@ -77,11 +77,11 @@ For the analysis, 6 groups were considered:
 In addition, the distinction between patients included between Januray and July vs August and December was done 
 
 There will be 5 outputs:
-- ards_young-{sitei}.html 
+- ards_young_{sitei}.html 
 - ards_young_day_{sitei}.csv
 - ards_young_gen_{sitei}.csv
 - ards_young_lab_{sitei}.csv
-- ards_young_proc_diag_med{sitei}.csv
+- ards_young_proc_diag_med_{sitei}.csv
 
 ards_young_day_{sitei}.csv : number of patient by day and by groups 
 
