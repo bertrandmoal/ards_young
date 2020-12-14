@@ -66,7 +66,8 @@ If there are not installed, you must install the following packages:
 - Gmisc
 - DT
 - kableExtra
-ex Rcode : install.packages("package")
+
+ex Rcode to install packages : install.packages("package")
 
 
 and navigate to the newly created file (e.g. `ards_young_analysis-frbdx.Rmd`) to modify the code to run on the data at your specific site.
