@@ -73,10 +73,10 @@ ex Rcode to install packages : install.packages("package")
 and navigate to the newly created file (e.g. `ards_young_analysis-frbdx.Rmd`) to modify the code to run on the data at your specific site.
 
 - line 2 - change the site name in the title
-- line 13 -  output_file="ards_young-frbdx.html" => change with your site name
-- line 45-46-47-  change the path to load the phase 2 files 
-- line 52 - indicate if there is an obfuscation required ( TRUE or FALSE)
-- line 55 - if YES what is the level of obfuscation ( number) 
+- line 12 -  output_file="ards_young-frbdx.html" => change with your site name
+- line 44-45-46-  change the path to load the phase 2 files 
+- line 51 - indicate if there is an obfuscation required ( TRUE or FALSE)
+- line 54 - if YES what is the level of obfuscation ( number) 
 
 Once everything runs, please hit the "Knit" button on top of the `.Rmd` file to create an `.html` file that will automatically be put into [`output/`](output/).
 

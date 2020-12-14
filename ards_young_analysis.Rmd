@@ -1,7 +1,6 @@
 ---
 title: "Preliminary_results: ARDS on young population in FRBDX"
 author: "Bertrand Moal"
-date:  "`r Sys.Date()`"
 output: 
   html_document:
     toc: true
@@ -42,9 +41,9 @@ library(kableExtra)
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/october/LocalPatientClinicalCourse.csv")
-LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/october/LocalPatientObservations.csv")
-LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/october/LocalPatientSummary.csv")
+LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv")
+LocalPatientObservations=read.csv("/LocalPatientObservations.csv")
+LocalPatientSummary=read.csv("/LocalPatientSummary.csv")
 
 ## obfuscation
 
