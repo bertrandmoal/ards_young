@@ -26,11 +26,8 @@ library(rmarkdown)
 library(grid)
 library(gridExtra)
 library(Gmisc)
-library(googlesheets4)
 library(DT)
 library(kableExtra)
-library(readxl)
-
 
 ```
 
@@ -49,9 +46,9 @@ obfuscationThreeshord <- 3
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("LocalPatientClinicalCourse.csv")
-LocalPatientObservations=read.csv("LocalPatientObservations.csv")
-LocalPatientSummary=read.csv("LocalPatientSummary.csv")
+LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/october/LocalPatientClinicalCourse.csv")
+LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/october/LocalPatientObservations.csv")
+LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/october/LocalPatientSummary.csv")
 
 ## obfuscation
 

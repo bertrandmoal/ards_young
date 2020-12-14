@@ -53,15 +53,31 @@ and open the R project
 
 ```open ards_young.Rproj```
 
+If there are not installed, you must install the following packages:
+- dplyr 
+- tidyverse
+- tidyr
+- icd.data
+- caret
+- knitr
+- rmarkdown
+- grid
+- gridExtra
+- Gmisc
+- DT
+- kableExtra
+ex Rcode : install.packages("package")
+
+
 and navigate to the newly created file (e.g. `ards_young_analysis-frbdx.Rmd`) to modify the code to run on the data at your specific site.
 
-- line 1 - change the site name in the title
+- line 2 - change the site name in the title
 - line 13 -  output_file="ards_young-frbdx.html" => change with your site name
 - line 52-53-54 -  change the path to load the phase 2 files 
 - line 59 - indicate if there is an obfuscation required ( TRUE or FALSE)
 - line 62 - if YES what is the level of obfuscation ( number) 
 
-Once everything runs, please hit the "Knit" button on top of the `.Rmd` file to create an `.html` file that will automatically be put into [`results/`](results/).
+Once everything runs, please hit the "Knit" button on top of the `.Rmd` file to create an `.html` file that will automatically be put into [`output/`](output/).
 
 ## What are the results?
 
@@ -97,6 +113,6 @@ ards_young_lab-{sitei}.csv : number, mean, and std lab by day and by groups
 
 ards_young_proc_diag_med-{sitei}.csv :number of patients with ICD10/9, medication, procedure by groups 
 
-Finally, please upload your results (in [`results/`](results/) via a [pull request] or request @bertrandmoal to add you as a contributor.
+Finally, please upload your results (in [`output/`](output/) via a [pull request] or request @bertrandmoal to add you as a contributor.
 
 If you run into any problem adapting this code to your data, let me  know via Slack (@bertrandmoal)
