@@ -39,10 +39,6 @@ library(kableExtra)
 #######  PART NEEDED TO BE CHANGED #######  
 ########################################## 
 
-## obfuscation
-obfusquation <- TRUE
-obfuscationThreeshord <- 3
-
 ####### load input file 
 ## change the path to load the phase 2 files  
 
@@ -550,7 +546,7 @@ plot_proc_day
 ```{R  message=FALSE, echo=FALSE}
 
 lab_day <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="LOINC") %>%
+  dplyr::filter( concept_type =="LAB-LOINC") %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
   dplyr::summarise(count_proc=n()) %>%
   dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
@@ -1109,7 +1105,7 @@ out_proc_diag_med=rbind(out_iCD,out_proc,out_med)
 ###  Lab -- output 
 
 output_lab_all <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="LOINC") %>%
+  dplyr::filter( concept_type =="LAB-LOINC") %>%
   dplyr::group_by(GROUP, days_since_admission, concept_code) %>%
   dplyr::summarise(npat=n_distinct(patient_num),
                    mean_value=mean(value, na.rm = TRUE),
@@ -1119,7 +1115,7 @@ output_lab_all <- LocalPatientObservations %>%
   dplyr::mutate(periode_group="all")
 
 output_lab_p <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="LOINC") %>%
+  dplyr::filter( concept_type =="LAB-LOINC") %>%
   dplyr::group_by(GROUP, days_since_admission, concept_code,periode_group) %>%
   dplyr::summarise(npat=n_distinct(patient_num),
                    mean_value=mean(value, na.rm = TRUE),
@@ -1383,7 +1379,7 @@ compli_risk_per %>% datatable(rownames = FALSE)
 get_pat_labs <- function(i,gr1,gr2,first_day,last_day){
   
   plotlab <- LocalPatientObservations %>%
-    dplyr::filter( concept_type =="LOINC") %>%
+    dplyr::filter( concept_type =="LAB-LOINC") %>%
     dplyr::filter( GROUP %in% c(gr1,gr2)) %>%
     dplyr::filter( days_since_admission >= first_day & days_since_admission <last_day) %>%
     dplyr::inner_join(lab_mapping[i,], by = c ("concept_code" = "LOINC"))%>%
@@ -1401,7 +1397,7 @@ get_pat_labs <- function(i,gr1,gr2,first_day,last_day){
     ylab("")
   
   labtab <- LocalPatientObservations %>%
-    dplyr::filter( concept_type =="LOINC") %>%
+    dplyr::filter( concept_type =="LAB-LOINC") %>%
     dplyr::filter( GROUP %in% c(gr1,gr2)) %>%
     dplyr::filter( days_since_admission >= first_day & days_since_admission <last_day) %>%
     dplyr::inner_join(lab_mapping[i,], by = c ("concept_code" = "LOINC"))%>%

@@ -74,9 +74,9 @@ and navigate to the newly created file (e.g. `ards_young_analysis-frbdx.Rmd`) to
 
 - line 2 - change the site name in the title
 - line 13 -  output_file="ards_young-frbdx.html" => change with your site name
-- line 52-53-54 -  change the path to load the phase 2 files 
-- line 59 - indicate if there is an obfuscation required ( TRUE or FALSE)
-- line 62 - if YES what is the level of obfuscation ( number) 
+- line 45-46-47-  change the path to load the phase 2 files 
+- line 52 - indicate if there is an obfuscation required ( TRUE or FALSE)
+- line 55 - if YES what is the level of obfuscation ( number) 
 
 Once everything runs, please hit the "Knit" button on top of the `.Rmd` file to create an `.html` file that will automatically be put into [`output/`](output/).
 
