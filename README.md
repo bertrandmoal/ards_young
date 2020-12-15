@@ -92,12 +92,13 @@ For the analysis, 6 groups were considered:
 
 In addition, the distinction between patients included between Januray and July vs August and December was done 
 
-There will be 5 outputs:
+There will be 6 outputs:
 - ards_young-{sitei}.html 
 - ards_young_day-{sitei}.csv
 - ards_young_gen-{sitei}.csv
 - ards_young_lab-{sitei}.csv
 - ards_young_proc_diag_med-{sitei}.csv
+- obfusc-{sitei}.csv
 
 ards_young_day-{sitei}.csv : number of patient by day and by groups 
 
@@ -113,6 +114,8 @@ ards_young_gen-{sitei}.csv by groups
 ards_young_lab-{sitei}.csv : number, mean, and std lab by day and by groups 
 
 ards_young_proc_diag_med-{sitei}.csv :number of patients with ICD10/9, medication, procedure by groups 
+
+obfusc-{sitei}.csv : obfuscation TRUE or FALSE , value 
 
 Finally, please upload your results (in [`output/`](output/) via a [pull request] or request @bertrandmoal to add you as a contributor.
 

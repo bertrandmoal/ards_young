@@ -9,7 +9,7 @@ output:
     css: style.css
 
 knit: (function(inputFile, encoding) {
-     rmarkdown::render(inputFile, encoding = encoding, output_dir = "output", output_file="ards_young-frbdx.html") })
+     rmarkdown::render(inputFile, encoding = encoding, output_dir = "output", output_file="ards_young-FRBDX.html") })
 ---
 
 ```{r setup, warning=FALSE, message=FALSE, echo=FALSE}
@@ -41,9 +41,9 @@ library(kableExtra)
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv")
-LocalPatientObservations=read.csv("/LocalPatientObservations.csv")
-LocalPatientSummary=read.csv("/LocalPatientSummary.csv")
+LocalPatientClinicalCourse=read.csv("LocalPatientClinicalCourse.csv")
+LocalPatientObservations=read.csv("LocalPatientObservations.csv")
+LocalPatientSummary=read.csv("LocalPatientSummary.csv")
 
 ## obfuscation
 
@@ -2050,9 +2050,6 @@ outcomes %>% datatable(rownames = FALSE)
 
 
 
-
-
-
 ```{R  message=FALSE, echo=FALSE}
 
 ### ouput 
@@ -2072,6 +2069,11 @@ var_gen_num = c("number","n_severe" ,"26to49","50to69","70to79","80plus","18to25
 var_gen_ag =c("mean_freq","std_freq", "mean_los", "std_los")
 
 ## manage obfuscation
+
+## add obfuscation 
+
+obfusc=data.frame("siteid" = siteid, "truefalse" = obfusquation, "value" = obfuscationThreeshord)
+
 if(obfusquation){
   
   group_less_obf <- output_gen %>%
@@ -2121,19 +2123,11 @@ if(obfusquation){
 
 
 
-
-
-
-write.csv(output_gen, file =paste("output/ards_young_gen_",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(output_day, file =paste("output/ards_young_day_",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(output_lab, file =paste("output/ards_young_lab_",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(out_proc_diag_med, file =paste("output/ards_young_proc_diag_med",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_gen, file =paste("output/ards_young_gen-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_day, file =paste("output/ards_young_day-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_lab, file =paste("output/ards_young_lab-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+write.csv(out_proc_diag_med, file =paste("output/ards_young_proc_diag_med-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+write.csv(obfusc, file =paste("output/obfusc-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
 
 ```
 
----
-
-knit: (function(inputFile, encoding) {
-     rmarkdown::render(inputFile, encoding = encoding, output_dir = "output", output_file=paste("output/ards_young_",siteid,".html",sep = "")) })
-     
----
