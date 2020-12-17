@@ -105,7 +105,7 @@ loinc_pao2 = "2703-7"
 ARDS=c('J80','518.82')
 
 start_date_p1=as.POSIXct(as.Date("2020-01-01"), tz = Sys.timezone())
-end_date_p1=as.POSIXct(as.Date("2020-08-01"), tz = Sys.timezone())
+end_date_p1=as.POSIXct(as.Date("2020-07-01"), tz = Sys.timezone())
 start_date_p2=as.POSIXct(as.Date("2020-12-31"), tz = Sys.timezone())
 
 ```
@@ -161,8 +161,8 @@ LocalPatientSummary <- LocalPatientSummary %>%
     age_group %in% c("18to25","26to49")~ "18_49",
     age_group %in% c("50to69","70to79","80plus")~ "sup_49"),
     periode_group = dplyr::case_when(  
-      admission_date >= start_date_p1 &  admission_date < end_date_p1 ~ "Jan_Jul",
-      admission_date >= end_date_p1 &  admission_date <= start_date_p2 ~ "Aug_Dec"))
+      admission_date >= start_date_p1 &  admission_date < end_date_p1 ~ "Jan_Jun",
+      admission_date >= end_date_p1 &  admission_date <= start_date_p2 ~ "Jul_Dec"))
 
 ### patients with ARDS 
 pat_ARDS <- LocalPatientObservations %>%

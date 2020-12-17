@@ -90,7 +90,7 @@ For the analysis, 6 groups were considered:
 - OTHERS_18_49 : patients without ICD10/9 code for ARDS,  with severe procedure or with severe medication, between 18 and 49 years old  .
 - OTHERS_49 : patients without ICD10/9 code for ARDS,  with severe procedure or with severe medication, older than 49 .
 
-In addition, the distinction between patients included between Januray and July vs August and December was done 
+In addition, the distinction between patients included between Januray and June vs July and December was done 
 
 There will be 6 outputs:
 - ards_young-{sitei}.html 
