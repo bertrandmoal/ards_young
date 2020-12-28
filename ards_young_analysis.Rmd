@@ -41,9 +41,9 @@ library(kableExtra)
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv")
-LocalPatientObservations=read.csv("/LocalPatientObservations.csv")
-LocalPatientSummary=read.csv("/LocalPatientSummary.csv")
+LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november/LocalPatientClinicalCourse.csv", na.strings =  '1/1/1900')
+LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november/LocalPatientObservations.csv",na.strings = '-999')
+LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november/LocalPatientSummary.csv",na.strings = '1/1/1900')
 
 ## obfuscation
 
@@ -53,9 +53,6 @@ obfusquation <- TRUE
 ##  if YES what is the level of obfuscation 
 obfuscationThreeshord <- 3
 
-
-####### 
-####### 
 ####### 
 ```
 
@@ -73,6 +70,7 @@ obfuscationValue <- -99
 
 ### reformat ICD10  : keep only the 3 first digit 
 LocalPatientObservations <- LocalPatientObservations %>%
+  dplyr::mutate(concept_code = as.character(concept_code))%>%
   dplyr::mutate( concept_code = if_else(concept_type %in% c("DIAG-ICD10","DIAG-ICD9"),substr(concept_code, 0, 3),concept_code))
 
 ### load ICD10 
@@ -154,6 +152,7 @@ start_date_p2=as.POSIXct(as.Date("2020-12-31"), tz = Sys.timezone())
 ### Group selection 
 ## select patient by age 
 LocalPatientSummary <- LocalPatientSummary %>%
+  dplyr::mutate(admission_date = as.POSIXct(admission_date)) %>%
   dplyr::filter( age_group %in% c("18to25","26to49","50to69","70to79","80plus")) %>%
   dplyr::mutate( age_group_spe = dplyr::case_when(  
     age_group %in% c("18to25","26to49")~ "18_49",
@@ -161,6 +160,7 @@ LocalPatientSummary <- LocalPatientSummary %>%
     periode_group = dplyr::case_when(  
       admission_date >= start_date_p1 &  admission_date < end_date_p1 ~ "Jan_Jun",
       admission_date >= end_date_p1 &  admission_date <= start_date_p2 ~ "Jul_Dec"))
+
 
 ### patients with ARDS 
 pat_ARDS <- LocalPatientObservations %>%
@@ -208,7 +208,8 @@ LocalPatientObservations <- LocalPatientObservations %>%
 
 LocalPatientClinicalCourse <- LocalPatientClinicalCourse %>%
   dplyr::filter( patient_num %in% LocalPatientSummary$patient_num) %>%
-  dplyr::left_join(LocalPatientSummary[,c("patient_num","periode_group","GROUP","ARDS","PROC_SEVERE","MED_SEVERE")])
+  dplyr::left_join(LocalPatientSummary[,c("patient_num","periode_group","GROUP","ARDS","PROC_SEVERE","MED_SEVERE")])%>%
+  dplyr::mutate(calendar_date = as.POSIXct(calendar_date))
 
 ```
 
@@ -226,7 +227,7 @@ n_no_y=num_pat$npat[num_pat$GROUP=="NO_ARDS_18_49"]
 n_no_o=num_pat$npat[num_pat$GROUP=="NO_ARDS_sup_49"]
 n_other_y=num_pat$npat[num_pat$GROUP=="OTHERS_18_49"]
 n_other_o=num_pat$npat[num_pat$GROUP=="OTHERS_sup_49"]
-n_tt=n_ards_y+n_ards_o+n_no_y+n_no_o+n_other_y+n_other_o
+n_tt=sum(num_pat$npat)
 
 grid.newpage()
 # set some parameters to use repeatedly
@@ -674,6 +675,9 @@ box_qc_Pa02_min
 ### For the entire population 
 
 ```{R  message=FALSE, echo=FALSE}
+
+if (nrow(pat_ARDS)!=0) {
+  
 ADRS_Pa02 <- LocalPatientObservations %>%
   dplyr::filter( days_since_admission >= 0 & concept_code ==loinc_pao2) %>%
   dplyr:: mutate( ARDS =  if_else(GROUP %in% c("ARDS_sup_49","ARDS_18_49"),1,0),
@@ -696,23 +700,28 @@ SPE_PaO2_ARDS=specificity(as.factor(ADRS_Pa02$PAO2sup1), as.factor(ADRS_Pa02$ARD
 
 kable(xtab_ADRS_Pa02) %>% kable_styling()
 
+}
+
+
+if (nrow(pat_ARDS)!=0) {round(SEN_PaO2_ARDS,2)} else { print("No ARDS patient")}
 
 ```
 
+**SENSIBILITY** : `r if (nrow(pat_ARDS)!=0) {round(SEN_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
-**SENSIBILITY** : `r round(SEN_PaO2_ARDS,2)`
+**PPV**         : `r if (nrow(pat_ARDS)!=0) {round(PPV_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
-**PPV**         : `r round(PPV_PaO2_ARDS,2)`
+**NPV**         : `r if (nrow(pat_ARDS)!=0) {round(NPV_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
-**NPV**         : `r round(NPV_PaO2_ARDS,2)`
-
-**SPECIFITY**   : `r round(SPE_PaO2_ARDS,2)`
+**SPECIFITY**   : `r if (nrow(pat_ARDS)!=0) {round(SPE_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
 
 ### For the  population less than 49 year old 
 
 ```{R  message=FALSE, echo=FALSE}
 #on population less than 50
+
+if (nrow(pat_ARDS)!=0) {
 
 ADRS_Pa02_y<-ADRS_Pa02  %>% dplyr::filter( GROUP %in% c("ARDS_18_49", "NO_ARDS_18_49", "OTHERS_18_49"))
 xtab_ADRS_Pa02_y <- table(ADRS_Pa02_y$ARDS, ADRS_Pa02_y$PAO2sup1, dnn = c("ARDS", "more than 1 Pa02")) 
@@ -728,16 +737,18 @@ SPE_PaO2_ARDS_y=specificity(as.factor(ADRS_Pa02_y$PAO2sup1), as.factor(ADRS_Pa02
 
 kable(xtab_ADRS_Pa02_y) %>% kable_styling()
 
+
+}
 ```
 
 
-**SENSIBILITY** : `r round(SEN_PaO2_ARDS_y,2)`
+**SENSIBILITY** : `r if (nrow(pat_ARDS)!=0) {round(SEN_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
-**PPV**         : `r round(PPV_PaO2_ARDS_y,2)`
+**PPV**         : `r if (nrow(pat_ARDS)!=0) {round(PPV_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
-**NPV**         : `r round(NPV_PaO2_ARDS_y,2)`
+**NPV**         : `r if (nrow(pat_ARDS)!=0) {round(NPV_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
-**SPECIFITY**   : `r round(SPE_PaO2_ARDS_y,2)`
+**SPECIFITY**   : `r if (nrow(pat_ARDS)!=0) {round(SPE_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
 ```{R  message=FALSE, echo=FALSE}
 
@@ -1240,6 +1251,8 @@ pre_hospit_risk
 
 ```{R  message=FALSE, echo=FALSE}
 
+if (length(n_ards_y)!=0 & length(n_no_y)!=0 ) {
+  
 ICD_ARDS_18_49 <- diagnosis%>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::group_by(concept_code, GROUP,long_desc) %>%
@@ -1272,6 +1285,8 @@ plotICD_ARDS_18_49=ggplot(data = ICD_ARDS_18_49,aes(x=NO_ARDS_18_49, y=ARDS_18_4
 
 plotICD_ARDS_18_49
 
+}
+
 ```
 
 For the 10 most frequent ICD-10/9 codes for the group ARDS 18-49, in x coordinate the frequency(%) of those code  for the group No ARDS 18-49 and in y coordinate the frequency(%) of those code for the group ARDS 18-49
@@ -1279,6 +1294,8 @@ For the 10 most frequent ICD-10/9 codes for the group ARDS 18-49, in x coordinat
 
 
 ```{R  message=FALSE, echo=FALSE}
+
+if (length(n_ards_y)!=0 & length(n_no_y)!=0 ) {
 
 ICD_NOARDS <- diagnosis%>%
   dplyr::filter( days_since_admission >= 0) %>%
@@ -1314,6 +1331,7 @@ plotICD_NOARDS=ggplot(data = ICD_NOARDS,aes(x=NO_ARDS_18_49, y=ARDS_18_49, fill 
 
 plotICD_NOARDS
 
+}
 ```
 
 For the 10 most frequent ICD-10/9 codes for the group NO ARDS 18-49, in x coordinate the frequency(%) of those code  for the group No ARDS 18-49 and in y coordinate the frequency(%) of those code for the group ARDS 18-49
@@ -1326,6 +1344,8 @@ For the 10 most frequent ICD-10/9 codes for the group NO ARDS 18-49, in x coordi
   
 ```{R  message=FALSE, echo=FALSE}
 
+if (length(n_ards_y)!=0 & length(n_no_y)!=0 ) {
+  
 atcd_risk_per <- diagnosis%>%
   dplyr::filter( days_since_admission < 0) %>%
   dplyr::group_by(concept_code, GROUP,long_desc) %>%
@@ -1342,12 +1362,18 @@ atcd_risk_per <- diagnosis%>%
                 NO_ARDS_18_49)
 
 atcd_risk_per %>% datatable(rownames = FALSE)
+
+} else {
+  print(" 0 ards patient less than 50 or 0 patient without ARDS less than 50")
+}
 ```
 
 
 **After hospitalization due to covid: Percentage of patients with ICD10/9  **
   
 ```{R  message=FALSE, echo=FALSE}
+
+if (length(n_ards_y)!=0 & length(n_no_y)!=0 ) {
 
 compli_risk_per <- diagnosis%>%
   dplyr::filter( days_since_admission >=0) %>%
@@ -1365,6 +1391,10 @@ compli_risk_per <- diagnosis%>%
                 NO_ARDS_18_49)
 
 compli_risk_per %>% datatable(rownames = FALSE)
+
+} else {
+  print(" 0 ards patient less than 50 or 0 patient without ARDS less than 50")
+}
 ```
 
 
@@ -1437,6 +1467,8 @@ lab_risk
 
 ```{R  message=FALSE, echo=FALSE}
 
+if (length(n_ards_y)!=0 & length(n_ards_o)!=0 ) {
+
 ICD_ARDS_treat <- diagnosis%>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::group_by(concept_code, GROUP,long_desc) %>%
@@ -1470,6 +1502,10 @@ plotICD_ARDS_18_49_treat=ggplot(data = ICD_ARDS_treat,aes(x=ARDS_sup_49, y=ARDS_
 
 plotICD_ARDS_18_49_treat
 
+} else {
+  print(" 0 ards patient less than 50 or more than 50")
+}
+
 ```
 
 For the 10 most frequent ICD-10/9 codes for the group ARDS 18-49, in x coordinate the frequency(%) of those code  for the group ARDS sup 49 and in y coordinate the frequency(%) of those code for the group ARDS 18-49
@@ -1477,6 +1513,8 @@ For the 10 most frequent ICD-10/9 codes for the group ARDS 18-49, in x coordinat
 
 
 ```{R  message=FALSE, echo=FALSE}
+
+if (length(n_ards_y)!=0 & length(n_ards_o)!=0 ) {
 
 ICD_ARDS_treat_sup <- diagnosis%>%
   dplyr::filter( days_since_admission >= 0) %>%
@@ -1511,12 +1549,18 @@ plotICD_ARDS_sup_treat=ggplot(data = ICD_ARDS_treat_sup,aes(x=ARDS_sup_49, y=ARD
 
 plotICD_ARDS_sup_treat
 
+} else {
+  print(" 0 ards patient less than 50 or more than 50")
+}
+
 ```
 
 For the 10 most frequent ICD-10 codes for the group ARDS sup 49, in x coordinate the frequency(%) of those code  for the group ARDS sup 49 and in y coordinate the frequency(%)of those code for the group ARDS 18-49
 
 
 ```{R  message=FALSE, echo=FALSE}
+
+if (length(n_ards_y)!=0 & length(n_ards_o)!=0 ) {
 
 ICD_diff_Y <- diagnosis%>%
   dplyr::filter( days_since_admission >= 0) %>%
@@ -1552,12 +1596,18 @@ plotICD_diff_Y=ggplot(data = ICD_diff_Y,aes(x=ARDS_sup_49, y=ARDS_18_49, fill = 
 
 plotICD_diff_Y
 
+} else {
+  print(" 0 ards patient less than 50 or more than 50")
+}
+
 ```
 
 For the 10 ICD-10/9 with the greatest difference in term of frequency between ARDS sup 49 and ARDS 18-49 groups codes for the group ARDS sup 49 and more frequent for the ARDS 18-49 group , in x coordinate the frequency(%) of those code  for the group ARDS sup 49 and in y coordinate the frequency(%)of those code for the group ARDS 18-49
 
 
 ```{R  message=FALSE, echo=FALSE}
+
+if (length(n_ards_y)!=0 & length(n_ards_o)!=0 ) {
 
 ICD_diff_O <- diagnosis%>%
   dplyr::filter( days_since_admission >= 0) %>%
@@ -1593,6 +1643,10 @@ plotICD_diff_O=ggplot(data = ICD_diff_O,aes(x=ARDS_sup_49, y=ARDS_18_49, fill = 
 
 plotICD_diff_O
 
+} else {
+  print(" 0 ards patient less than 50 or more than 50")
+}
+
 ```
 
 For the 10 ICD-10 with the greatest difference in term of frequency between ARDS sup 49 and ARDS 18-49 groups codes for the group ARDS sup 49 and more frequent for the ARDS sup 49 group , in x coordinate the frequency(%) of those code  for the group ARDS sup 49 and in y coordinate the frequency(%)of those code for the group ARDS 18-49
@@ -1604,6 +1658,8 @@ For the 10 ICD-10 with the greatest difference in term of frequency between ARDS
 **After hospitalization due to covid: Percentage of patients with ICD10/9  **
   
 ```{R  message=FALSE, echo=FALSE}
+
+if (length(n_ards_y)!=0 & length(n_ards_o)!=0 ) {
 
 compli_treat_per <- diagnosis%>%
   dplyr::filter( days_since_admission >=0) %>%
@@ -1621,6 +1677,12 @@ compli_treat_per <- diagnosis%>%
                 ARDS_sup_49)
 
 compli_treat_per %>% datatable(rownames = FALSE)
+
+
+} else {
+  print(" 0 ards patient less than 50 or more than 50")
+}
+
 ```
 
 
@@ -1819,28 +1881,6 @@ plot_rehosp
 
 ### ICD10/9-Before hospitalization due to covid 
 
-```{R  message=FALSE, echo=FALSE}
-
-atcd <- diagnosis%>%
-  dplyr::filter( days_since_admission < 0) %>%
-  dplyr::group_by(concept_code, GROUP,long_desc) %>%
-  dplyr::summarise(freq=n_distinct(patient_num))%>%
-  dplyr::rename(ICD=concept_code,
-                ICD_title =long_desc)%>%
-  pivot_wider(names_from = GROUP,names_sep = ".", values_from = freq,names_repair = "check_unique")%>%
-  dplyr::select(ICD,ICD_title,
-                ARDS_18_49,
-                ARDS_sup_49,
-                NO_ARDS_18_49,
-                NO_ARDS_sup_49,
-                OTHERS_18_49,
-                OTHERS_18_49)
-
-atcd %>% datatable(rownames = FALSE)
-```
-
-
-
 **Number of patients with ICD10/9 per groups**
   
   
@@ -1852,14 +1892,7 @@ atcd <- diagnosis%>%
   dplyr::summarise(freq=n_distinct(patient_num))%>%
   dplyr::rename(ICD=concept_code,
                 ICD_title =long_desc)%>%
-  pivot_wider(names_from = GROUP,names_sep = ".", values_from = freq,names_repair = "check_unique")%>%
-  dplyr::select(ICD,ICD_title,
-                ARDS_18_49,
-                ARDS_sup_49,
-                NO_ARDS_18_49,
-                NO_ARDS_sup_49,
-                OTHERS_18_49,
-                OTHERS_18_49)
+  pivot_wider(names_from = GROUP,names_sep = ".", values_from = freq,names_repair = "check_unique")
 
 atcd %>% datatable(rownames = FALSE)
 ```
@@ -1878,14 +1911,7 @@ atcd_per <- diagnosis%>%
   dplyr::rename(ICD=concept_code,
                 ICD_title =long_desc)%>%
   dplyr::select(ICD,ICD_title,GROUP,per)%>%
-  pivot_wider(names_from = GROUP,names_sep = ".", values_from =  per,names_repair = "check_unique")%>%
-  dplyr::select(ICD,ICD_title,
-                ARDS_18_49,
-                ARDS_sup_49,
-                NO_ARDS_18_49,
-                NO_ARDS_sup_49,
-                OTHERS_18_49,
-                OTHERS_sup_49) 
+  pivot_wider(names_from = GROUP,names_sep = ".", values_from =  per,names_repair = "check_unique")
 
 atcd_per %>% datatable(rownames = FALSE)
 ```
@@ -1903,14 +1929,7 @@ compli <- diagnosis%>%
   dplyr::summarise(freq=n_distinct(patient_num))%>%
   dplyr::rename(ICD=concept_code,
                 ICD_title =long_desc)%>%
-  pivot_wider(names_from = GROUP,names_sep = ".", values_from = freq,names_repair = "check_unique")%>%
-  dplyr::select(ICD,ICD_title,
-                ARDS_18_49,
-                ARDS_sup_49,
-                NO_ARDS_18_49,
-                NO_ARDS_sup_49,
-                OTHERS_18_49,
-                OTHERS_18_49)
+  pivot_wider(names_from = GROUP,names_sep = ".", values_from = freq,names_repair = "check_unique")
 
 compli %>% datatable(rownames = FALSE)
 ```
@@ -1928,14 +1947,7 @@ compli_per <- diagnosis%>%
   dplyr::rename(ICD=concept_code,
                 ICD_title =long_desc)%>%
   dplyr::select(ICD,ICD_title,GROUP,per)%>%
-  pivot_wider(names_from = GROUP,names_sep = ".", values_from =  per,names_repair = "check_unique")%>%
-  dplyr::select(ICD,ICD_title,
-                ARDS_18_49,
-                ARDS_sup_49,
-                NO_ARDS_18_49,
-                NO_ARDS_sup_49,
-                OTHERS_18_49,
-                OTHERS_sup_49) 
+  pivot_wider(names_from = GROUP,names_sep = ".", values_from =  per,names_repair = "check_unique")
 
 compli_per %>% datatable(rownames = FALSE)
 ```
@@ -1955,15 +1967,7 @@ if (test_icd=="DIAG-ICD10") {
     dplyr::group_by(PheCode, GROUP,Phenotype) %>%
     dplyr::summarise(freq=n_distinct(patient_num))%>%
     pivot_wider(names_from = GROUP,names_sep = ".", values_from = freq,names_repair = "check_unique")%>%
-    dplyr::filter(!is.na(Phenotype))%>%
-    dplyr::select(PheCode,Phenotype,
-                  ARDS_18_49,
-                  ARDS_sup_49,
-                  NO_ARDS_18_49,
-                  NO_ARDS_sup_49,
-                  OTHERS_18_49,
-                  OTHERS_18_49)
-  
+    dplyr::filter(!is.na(Phenotype))
   
   compli_phe %>% datatable(rownames = FALSE)
 }
