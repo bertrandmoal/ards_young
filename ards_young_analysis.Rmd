@@ -104,6 +104,8 @@ start_date_p1=as.POSIXct(as.Date("2020-01-01"), tz = Sys.timezone())
 end_date_p1=as.POSIXct(as.Date("2020-07-01"), tz = Sys.timezone())
 start_date_p2=as.POSIXct(as.Date("2020-12-31"), tz = Sys.timezone())
 
+last_date_inclusion=as.POSIXct(as.Date("2020-11-30"), tz = Sys.timezone())
+
 ```
 
 
@@ -139,7 +141,6 @@ start_date_p2=as.POSIXct(as.Date("2020-12-31"), tz = Sys.timezone())
 **6 - General Descriptive analysis **
   
   
-  
 # Details 
   
   
@@ -150,6 +151,18 @@ start_date_p2=as.POSIXct(as.Date("2020-12-31"), tz = Sys.timezone())
 
 ```{R message=FALSE, echo=FALSE}
 ### Group selection 
+
+#remove patient entry after the last date of inclusion 
+LocalPatientSummary <- LocalPatientSummary %>%
+  dplyr::filter( admission_date <= last_date_inclusion)
+
+LocalPatientClinicalCourse <- LocalPatientClinicalCourse %>%
+  dplyr::filter( patient_num %in% unique(LocalPatientSummary$patient_num))
+
+LocalPatientObservations <- LocalPatientObservations %>%
+  dplyr::filter( patient_num %in% unique(LocalPatientSummary$patient_num))
+
+
 ## select patient by age 
 LocalPatientSummary <- LocalPatientSummary %>%
   dplyr::mutate(admission_date = as.POSIXct(admission_date)) %>%
@@ -498,7 +511,6 @@ sev<-  LocalPatientSummary %>%
   dplyr::group_by(GROUP,severe) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=severe) %>%
-  dplyr::mutate(variable="n_severe") %>%
   dplyr::mutate(periode_group="all")%>%
   dplyr::mutate(concept="patient")
 
@@ -508,7 +520,6 @@ sev_p<-  LocalPatientSummary %>%
   dplyr::group_by(GROUP,severe,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=severe) %>%
-  dplyr::mutate(variable="n_severe") %>%
   dplyr::mutate(concept="patient")
 
 output_gen=rbind(output_gen,sev,sev_p)
@@ -521,7 +532,7 @@ sev_plot
 ```{R  message=FALSE, echo=FALSE}
 
 plot_proc_day <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10") %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
   dplyr::summarise(count_proc=n()) %>%
   dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
@@ -535,6 +546,35 @@ plot_proc_day <- LocalPatientObservations %>%
   ylab(label = "Average number of procedure")
 
 
+## output
+proc_day <- LocalPatientObservations %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
+  dplyr::summarise(count_proc=n()) %>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_proc=ifelse(is.na(count_proc),0,count_proc))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <15)%>%
+  dplyr::group_by(GROUP,days_since_admission) %>%
+  dplyr::summarise(value=mean(count_proc,na.rm = TRUE))%>%
+  dplyr::mutate(concept="PROC-ICD",
+                variable="average",
+                periode_group="all")
+
+proc_day_p <- LocalPatientObservations %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission,periode_group) %>%
+  dplyr::summarise(count_proc=n()) %>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_proc=ifelse(is.na(count_proc),0,count_proc))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <15)%>%
+  dplyr::group_by(GROUP,days_since_admission,periode_group) %>%
+  dplyr::summarise(value=mean(count_proc,na.rm = TRUE))%>%
+  dplyr::mutate(concept="PROC-ICD",
+                variable="average")
+
+output_day=rbind(output_day,proc_day,output_day_p)
+
+
 plot_proc_day
 
 ```
@@ -543,7 +583,7 @@ plot_proc_day
 
 ```{R  message=FALSE, echo=FALSE}
 
-lab_day <- LocalPatientObservations %>%
+plot_lab_day <- LocalPatientObservations %>%
   dplyr::filter( concept_type =="LAB-LOINC") %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
   dplyr::summarise(count_proc=n()) %>%
@@ -557,8 +597,35 @@ lab_day <- LocalPatientObservations %>%
   geom_point() + 
   ylab(label = "Average number of labs")
 
+## output
+lab_day <- LocalPatientObservations %>%
+  dplyr::filter( concept_type =="LAB-LOINC") %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
+  dplyr::summarise(count_proc=n()) %>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_proc=ifelse(is.na(count_proc),0,count_proc))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <15)%>%
+  dplyr::group_by(GROUP,days_since_admission) %>%
+  dplyr::summarise(value=mean(count_proc,na.rm = TRUE))%>%
+  dplyr::mutate(concept="LAB-LOINC",
+                variable="average",
+                periode_group="all")
 
-lab_day
+lab_day_p <- LocalPatientObservations %>%
+  dplyr::filter( concept_type =="LAB-LOINC") %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission,periode_group) %>%
+  dplyr::summarise(count_proc=n()) %>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_proc=ifelse(is.na(count_proc),0,count_proc))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <15)%>%
+  dplyr::group_by(GROUP,days_since_admission,periode_group) %>%
+  dplyr::summarise(value=mean(count_proc,na.rm = TRUE))%>%
+  dplyr::mutate(concept="LAB-LOINC",
+                variable="average")
+
+output_day=rbind(output_day,lab_day,lab_day_p)
+
+plot_lab_day
 
 ```
 
@@ -566,7 +633,7 @@ lab_day
 
 ```{R  message=FALSE, echo=FALSE}
 
-med_day <- LocalPatientObservations %>%
+plot_med_day <- LocalPatientObservations %>%
   dplyr::filter( concept_type =="MED-CLASS") %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
   dplyr::summarise(count_proc=n()) %>%
@@ -581,7 +648,36 @@ med_day <- LocalPatientObservations %>%
   ylab(label = "Average number of Labs")
 
 
-med_day
+## output
+med_day <- LocalPatientObservations %>%
+  dplyr::filter( concept_type =="MED-CLASS") %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
+  dplyr::summarise(count_proc=n()) %>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_proc=ifelse(is.na(count_proc),0,count_proc))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <15)%>%
+  dplyr::group_by(GROUP,days_since_admission) %>%
+  dplyr::summarise(value=mean(count_proc,na.rm = TRUE)) %>%
+  dplyr::mutate(concept="MED-CLASS",
+                variable="average",
+                periode_group="all")
+
+med_day_p <- LocalPatientObservations %>%
+  dplyr::filter( concept_type =="MED-CLASS") %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission,periode_group) %>%
+  dplyr::summarise(count_proc=n()) %>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_proc=ifelse(is.na(count_proc),0,count_proc))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <15)%>%
+  dplyr::group_by(GROUP,days_since_admission,periode_group) %>%
+  dplyr::summarise(value=mean(count_proc,na.rm = TRUE)) %>%
+  dplyr::mutate(concept="LAB-LOINC",
+                variable="average")
+
+output_day=rbind(output_day,med_day,med_day_p)
+
+
+plot_med_day
 
 ```
 
@@ -610,7 +706,7 @@ box_qc_PaO2
   
 ```{R  message=FALSE, echo=FALSE}
 
-pao2_day <- LocalPatientObservations %>%
+plot_pao2_day <- LocalPatientObservations %>%
   dplyr::mutate( pao2= if_else(concept_code == loinc_pao2,1,0))  %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
   dplyr::summarise(numvalue = sum(pao2))%>%
@@ -625,7 +721,35 @@ pao2_day <- LocalPatientObservations %>%
   ylab(label = "Average number of PaO2")
 
 
-pao2_day
+## output
+pao2_day <- LocalPatientObservations %>%
+  dplyr::mutate( pao2= if_else(concept_code == loinc_pao2,1,0))  %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
+  dplyr::summarise(numvalue = sum(pao2))%>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(numvalue=ifelse(is.na(numvalue),0,numvalue))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <30)%>%
+  dplyr::group_by(GROUP,days_since_admission) %>%
+  dplyr::summarise(value=mean(numvalue,na.rm = TRUE)) %>%
+  dplyr::mutate(concept="PA02",
+                variable="average",
+                periode_group="all")
+
+pao2_day_p <- LocalPatientObservations %>%
+  dplyr::mutate( pao2= if_else(concept_code == loinc_pao2,1,0))  %>%
+  dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
+  dplyr::summarise(numvalue = sum(pao2))%>%
+  dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
+  dplyr::mutate(numvalue=ifelse(is.na(numvalue),0,numvalue))%>%
+  dplyr::filter( days_since_admission >= 0 & days_since_admission <30)%>%
+  dplyr::group_by(GROUP,days_since_admission) %>%
+  dplyr::summarise(value=mean(numvalue,na.rm = TRUE)) %>%
+  dplyr::mutate(concept="PA02",
+                variable="average")
+
+output_day=rbind(output_day,pao2_day,pao2_day_p)
+
+plot_pao2_day
 
 ```
 
@@ -676,7 +800,20 @@ box_qc_Pa02_min
 
 ```{R  message=FALSE, echo=FALSE}
 
-if (nrow(pat_ARDS)!=0) {
+if (nrow(pat_ARDS)==0) {
+
+  # create output 
+output_sens <- data.frame(matrix(ncol = 5, nrow = 1))
+x <- c("popu", "sensibility", "ppv", "npv","specificity")
+colnames(output_sens) <- x
+
+output_sens$popu="all"
+output_sens$sensibility=-999
+output_sens$ppv=-999
+output_sens$npv=-999
+output_sens$specificity=-999
+  
+}else {
   
 ADRS_Pa02 <- LocalPatientObservations %>%
   dplyr::filter( days_since_admission >= 0 & concept_code ==loinc_pao2) %>%
@@ -696,14 +833,23 @@ PPV_PaO2_ARDS=posPredValue(as.factor(ADRS_Pa02$PAO2sup1), as.factor(ADRS_Pa02$AR
 NPV_PaO2_ARDS=negPredValue(as.factor(ADRS_Pa02$PAO2sup1), as.factor(ADRS_Pa02$ARDS), "0")
 SPE_PaO2_ARDS=specificity(as.factor(ADRS_Pa02$PAO2sup1), as.factor(ADRS_Pa02$ARDS), "0")
 
+# create output 
+output_sens <- data.frame(matrix(ncol = 5, nrow = 1))
+x <- c("popu", "sensibility", "ppv", "npv","specificity")
+colnames(output_sens) <- x
+
+output_sens$popu="all"
+output_sens$sensibility=SEN_PaO2_ARDS
+output_sens$ppv=PPV_PaO2_ARDS
+output_sens$npv=NPV_PaO2_ARDS
+output_sens$specificity=SPE_PaO2_ARDS
+
 # kable(xtab_ADRS_Pa02)
 
 kable(xtab_ADRS_Pa02) %>% kable_styling()
 
 }
 
-
-if (nrow(pat_ARDS)!=0) {round(SEN_PaO2_ARDS,2)} else { print("No ARDS patient")}
 
 ```
 
@@ -721,7 +867,18 @@ if (nrow(pat_ARDS)!=0) {round(SEN_PaO2_ARDS,2)} else { print("No ARDS patient")}
 ```{R  message=FALSE, echo=FALSE}
 #on population less than 50
 
-if (nrow(pat_ARDS)!=0) {
+if (length(n_ards_y)==0) {
+    # create output 
+output_sens_y <- data.frame(matrix(ncol = 5, nrow = 1))
+colnames(output_sens_y) <- x
+
+output_sens_y$popu="less_50"
+output_sens_y$sensibility=-999
+output_sens_y$ppv=-999
+output_sens_y$npv=-999
+output_sens_y$specificity=-999
+  
+}else {
 
 ADRS_Pa02_y<-ADRS_Pa02  %>% dplyr::filter( GROUP %in% c("ARDS_18_49", "NO_ARDS_18_49", "OTHERS_18_49"))
 xtab_ADRS_Pa02_y <- table(ADRS_Pa02_y$ARDS, ADRS_Pa02_y$PAO2sup1, dnn = c("ARDS", "more than 1 Pa02")) 
@@ -735,8 +892,17 @@ PPV_PaO2_ARDS_y=posPredValue(as.factor(ADRS_Pa02_y$PAO2sup1), as.factor(ADRS_Pa0
 NPV_PaO2_ARDS_y=negPredValue(as.factor(ADRS_Pa02_y$PAO2sup1), as.factor(ADRS_Pa02_y$ARDS), "0")
 SPE_PaO2_ARDS_y=specificity(as.factor(ADRS_Pa02_y$PAO2sup1), as.factor(ADRS_Pa02_y$ARDS), "0")
 
-kable(xtab_ADRS_Pa02_y) %>% kable_styling()
+# create output 
+output_sens_y <- data.frame(matrix(ncol = 5, nrow = 1))
+colnames(output_sens_y) <- x
 
+output_sens_y$popu="less_50"
+output_sens_y$sensibility=SEN_PaO2_ARDS_y
+output_sens_y$ppv=PPV_PaO2_ARDS_y
+output_sens_y$npv=NPV_PaO2_ARDS_y
+output_sens_y$specificity=SPE_PaO2_ARDS_y
+
+kable(xtab_ADRS_Pa02_y) %>% kable_styling()
 
 }
 ```
@@ -749,6 +915,14 @@ kable(xtab_ADRS_Pa02_y) %>% kable_styling()
 **NPV**         : `r if (nrow(pat_ARDS)!=0) {round(NPV_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
 **SPECIFITY**   : `r if (nrow(pat_ARDS)!=0) {round(SPE_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
+
+```{R  message=FALSE, echo=FALSE}
+
+# combined sensibity analysis 
+output_sens=rbind(output_sens,output_sens_y)
+
+```
+
 
 ```{R  message=FALSE, echo=FALSE}
 
@@ -2057,10 +2231,12 @@ outcomes %>% datatable(rownames = FALSE)
 
 ### ouput 
 siteid=unique(LocalPatientSummary$siteid)
+
 output_day$siteid=siteid
 output_gen$siteid=siteid
 output_lab$siteid=siteid
 out_proc_diag_med$siteid=siteid
+output_sens$siteid=siteid
 
 ## manage std with 1 patient 
 output_lab <- output_lab %>%
@@ -2095,7 +2271,7 @@ if(obfusquation){
   output_day <- output_day %>%
     dplyr::mutate(
       value = ifelse(
-        test = value < obfuscationThreeshord & value != 0,
+        test = value < obfuscationThreeshord & value != 0 & variable == "number",
         yes = obfuscationValue, no = value))
   
   out_proc_diag_med <- out_proc_diag_med %>%
@@ -2131,6 +2307,8 @@ write.csv(output_day, file =paste("output/ards_young_day-",siteid,".csv",sep = "
 write.csv(output_lab, file =paste("output/ards_young_lab-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
 write.csv(out_proc_diag_med, file =paste("output/ards_young_proc_diag_med-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
 write.csv(obfusc, file =paste("output/obfusc-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_sens, file =paste("output/sens-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+
 
 ```
 

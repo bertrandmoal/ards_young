@@ -92,15 +92,19 @@ For the analysis, 6 groups were considered:
 
 In addition, the distinction between patients included between Januray and June vs July and December was done 
 
-There will be 6 outputs:
+There will be 7 outputs:
 - ards_young-{sitei}.html 
 - ards_young_day-{sitei}.csv
 - ards_young_gen-{sitei}.csv
 - ards_young_lab-{sitei}.csv
 - ards_young_proc_diag_med-{sitei}.csv
 - obfusc-{sitei}.csv
+- sens-{sitei}.csv
 
-ards_young_day-{sitei}.csv : number of patient by day and by groups 
+
+ards_young_day-{sitei}.csv : 
+- number of patient by day and by groups 
+- avergae number of lab/ ICD/ procedure and med by groups and by day 
 
 ards_young_gen-{sitei}.csv by groups
 - number of patient, in total, by age groups and by sex 
@@ -116,6 +120,8 @@ ards_young_lab-{sitei}.csv : number, mean, and std lab by day and by groups
 ards_young_proc_diag_med-{sitei}.csv :number of patients with ICD10/9, medication, procedure by groups 
 
 obfusc-{sitei}.csv : obfuscation TRUE or FALSE , value 
+
+sens-{sitei}.csv : sensibility , specificity , NPV and PPV for ARDSversus at lest one Pa02 betwwen 5 and 20 dayx since admission for all patient and less than 40 
 
 Finally, please upload your results (in [`output/`](output/) via a [pull request] or request @bertrandmoal to add you as a contributor.
 
