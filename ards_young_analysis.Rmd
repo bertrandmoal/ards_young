@@ -41,9 +41,9 @@ library(kableExtra)
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november/LocalPatientClinicalCourse.csv", na.strings =  '1/1/1900')
-LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november/LocalPatientObservations.csv",na.strings = '-999')
-LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november/LocalPatientSummary.csv",na.strings = '1/1/1900')
+LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings =  '1/1/1900')
+LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
+LocalPatientSummary=read.csv("/LocalPatientSummary.csv",na.strings = '1/1/1900')
 
 ## obfuscation
 
@@ -807,9 +807,9 @@ pre_hospit<-  LocalPatientObservations %>%
 pre_hospit_p<-  LocalPatientObservations %>%
   dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission<0 ) %>%
   dplyr::mutate(previous_hospi = "YES") %>%
-  dplyr::select( patient_num, GROUP,previous_hospi,periode_group) %>%
+  dplyr::select( patient_num, GROUP,previous_hospi) %>%
   unique()%>%
-  dplyr::right_join(LocalPatientSummary[,c("patient_num","GROUP")],by =c("patient_num","GROUP"))%>%
+  dplyr::right_join(LocalPatientSummary[,c("patient_num","GROUP","periode_group")],by =c("patient_num","GROUP"))%>%
   dplyr::mutate(previous_hospi = if_else(is.na(previous_hospi),"no_previous_hospi","previous_hospi")) %>%
   dplyr::group_by(GROUP,previous_hospi,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
