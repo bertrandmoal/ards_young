@@ -41,9 +41,9 @@ library(caret)
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings =  '1/1/1900')
+LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
 LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
-LocalPatientSummary=read.csv("/LocalPatientSummary.csv",na.strings = '1/1/1900')
+LocalPatientSummary=read.csv("/LocalPatientSummary.csv", na.strings = "1900-01-01")
 
 ## obfuscation
 
@@ -52,7 +52,6 @@ obfusquation <- TRUE
 
 ##  if YES what is the level of obfuscation 
 obfuscationThreeshord <- 3
-
 ####### 
 ```
 
@@ -818,7 +817,11 @@ box_qc_Pa02_min
 
 ```{R  message=FALSE, echo=FALSE}
 
-if (nrow(pat_ARDS)==0) {
+### check if there Pa02 
+test_ADRS_Pa02 <- LocalPatientObservations %>%
+  dplyr::filter( days_since_admission >= 0 & concept_code ==loinc_pao2)
+
+if (nrow(pat_ARDS)==0 | nrow(test_ADRS_Pa02)==0) {
 
   # create output 
 output_sens <- data.frame(matrix(ncol = 5, nrow = 1))
@@ -871,13 +874,13 @@ kable(xtab_ADRS_Pa02) %>% kable_styling()
 
 ```
 
-**SENSIBILITY** : `r if (nrow(pat_ARDS)!=0) {round(SEN_PaO2_ARDS,2)} else { print("No ARDS patient")}`
+**SENSIBILITY** : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(SEN_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
-**PPV**         : `r if (nrow(pat_ARDS)!=0) {round(PPV_PaO2_ARDS,2)} else { print("No ARDS patient")}`
+**PPV**         : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(PPV_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
-**NPV**         : `r if (nrow(pat_ARDS)!=0) {round(NPV_PaO2_ARDS,2)} else { print("No ARDS patient")}`
+**NPV**         : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(NPV_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
-**SPECIFITY**   : `r if (nrow(pat_ARDS)!=0) {round(SPE_PaO2_ARDS,2)} else { print("No ARDS patient")}`
+**SPECIFITY**   : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(SPE_PaO2_ARDS,2)} else { print("No ARDS patient")}`
 
 
 ### For the  population less than 49 year old 
@@ -885,7 +888,7 @@ kable(xtab_ADRS_Pa02) %>% kable_styling()
 ```{R  message=FALSE, echo=FALSE}
 #on population less than 50
 
-if (length(n_ards_y)==0) {
+if (length(n_ards_y)==0 | nrow(test_ADRS_Pa02)==0) {
     # create output 
 output_sens_y <- data.frame(matrix(ncol = 5, nrow = 1))
 colnames(output_sens_y) <- x
@@ -926,13 +929,13 @@ kable(xtab_ADRS_Pa02_y) %>% kable_styling()
 ```
 
 
-**SENSIBILITY** : `r if (nrow(pat_ARDS)!=0) {round(SEN_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
+**SENSIBILITY** : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(SEN_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
-**PPV**         : `r if (nrow(pat_ARDS)!=0) {round(PPV_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
+**PPV**         : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(PPV_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
-**NPV**         : `r if (nrow(pat_ARDS)!=0) {round(NPV_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
+**NPV**         : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(NPV_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
-**SPECIFITY**   : `r if (nrow(pat_ARDS)!=0) {round(SPE_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
+**SPECIFITY**   : `r if (nrow(pat_ARDS)!=0 & nrow(test_ADRS_Pa02)!=0) {round(SPE_PaO2_ARDS_y,2)} else { print("No ARDS patient")}`
 
 ```{R  message=FALSE, echo=FALSE}
 
