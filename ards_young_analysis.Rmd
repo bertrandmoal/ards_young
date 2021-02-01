@@ -41,9 +41,9 @@ library(caret)
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
-LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
-LocalPatientSummary=read.csv("/LocalPatientSummary.csv", na.strings = "1900-01-01")
+LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november2020/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
+LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november2020/LocalPatientObservations.csv",na.strings = '-999')
+LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november2020/LocalPatientSummary.csv", na.strings = "1900-01-01")
 
 ## obfuscation
 
@@ -265,7 +265,7 @@ gp <- gpar(fill = "lightgrey")
 (total <- boxGrob(paste("Total Number of patient \n >= 18 years old \n N = ",n_tt), x=midx, y=y_1, box_gp =gp, width = 0.3))
 (ards <- boxGrob(paste(" \n \b ARDS \b \n  \n N = ",n_ards_y+n_ards_o),  x=leftx, y=y_2, box_gp = gp, width = width))
 (no_ards <- boxGrob(paste(" \b NO ARDS \b \n without ARDS,\n  without ventilation,\n without severe medication \n N = ",n_no_y+n_no_o),x=midx, y=y_2,box_gp = gp, width = width))
-(others <- boxGrob(paste(" \b OTHERS \b \n without ARDS \n with ventilation \n or with severe medication \n N = ",n_other_y+n_other_o), x=rightx, y=y_2,box_gp = gp, width = width))
+(others <- boxGrob(paste(" \b OTHERS \b \n without ARDS \n with severe procedure \n or with severe medication \n N = ",n_other_y+n_other_o), x=rightx, y=y_2,box_gp = gp, width = width))
 (ards_max49 <- boxGrob(paste(" ARDS \n 18-49 y.o. \n N = ",n_ards_y), x=x2_1, y=y_3,box_gp = gp, width = width2))
 (ards_min50 <- boxGrob(paste(" ARDS  \n > 49 y.o. \n N = ",n_ards_o), x=x2_2, y=y_3,box_gp = gp, width = width2))
 (no_max49 <- boxGrob(paste(" NO ARDS \n 18-49 y.o.\n N = ",n_no_y), x=x2_3, y=y_3,box_gp = gp, width = width2))
