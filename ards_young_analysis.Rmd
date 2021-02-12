@@ -46,9 +46,10 @@ source("R/comorbidity-map-funcs.R")
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november2020/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
-LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november2020/LocalPatientObservations.csv",na.strings = '-999')
-LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/november2020/LocalPatientSummary.csv", na.strings = "1900-01-01")
+
+LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
+LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
+LocalPatientSummary=read.csv("/LocalPatientSummary.csv", na.strings = "1900-01-01")
 
 ## obfuscation
 
@@ -88,6 +89,19 @@ ICD9=icd.data::icd9cm_hierarchy %>%
 pheno10_ICD10=read.csv("doc/phecode_icd10.csv")
 pheno10_ICD10$ICD10=str_replace_all(pheno10_ICD10$ICD10, "\\.", "")
 
+### load pheno_code 
+pheno_ICD9=read.csv("doc/phecode_icd9_rolled.csv", sep = ",")
+pheno_ICD9 <- pheno_ICD9%>%
+  dplyr::select(-c("Rollup","Leaf","Ignore.Bool"))%>%
+  rename(ICD.String=ICD9.String, 
+         ICD=ICD9)
+
+pheno10_ICD10 <- pheno10_ICD10%>%
+  rename(ICD.String=ICD10.String, 
+         ICD=ICD10)
+
+pheno_ICD = rbind(pheno_ICD9,pheno10_ICD10)
+
 ## load procedure 
 sev_proc_icd10 <- read_csv('doc/sev_proc_icd10.csv')
 
@@ -113,6 +127,11 @@ start_date_p2=as.POSIXct(as.Date("2020-12-31"), tz = Sys.timezone())
 
 # date of inclusion
 last_date_inclusion=as.POSIXct(as.Date("2020-12-01"), tz = Sys.timezone())
+
+
+### limit before / after 
+limit_d_befor= -8
+limit_d_after= 90
 
 ```
 
@@ -467,7 +486,7 @@ box_el_fd
 ```
 
 
-**Lenght of stay per patient ** 
+**Length of stay per patient ** 
   
 ```{R  message=FALSE,  warning=FALSE, echo=FALSE}
 
@@ -545,13 +564,36 @@ output_gen=rbind(output_gen,sev,sev_p)
 sev_plot
 ```
 
-## Diagnostic: Percentage of patient without any procedure
+## Diagnostic:
+
+
+### Distribution by week  
 
 ```{R  message=FALSE, echo=FALSE}
 
 output<- output%>%
     dplyr::filter( periode_group =="all") 
 
+plot_diag_per_week <- LocalPatientObservations %>%
+  dplyr::filter( concept_type %in% c("DIAG-ICD10","DIAG-ICD9")) %>%
+  dplyr::mutate(week = floor(days_since_admission/7))%>%
+  dplyr::group_by(week)%>%
+  distinct(patient_num, concept_code)%>%
+  summarise(n_diag_pat=n())%>%
+  dplyr::filter( week >=-3) %>%
+  ggplot(aes(x = week, y = n_diag_pat)) + 
+  geom_bar(stat="identity", color="black", position=position_dodge())+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ylab(label = "number of couple ICD-Patient")+
+  xlab(label = "week")
+
+plot_diag_per_week
+
+```
+
+### Diagnostic: Percentage of patient without any diagnostic
+
+```{R  message=FALSE, echo=FALSE}
 
 plot_no_diag_day <- LocalPatientObservations %>%
   dplyr::filter( concept_type %in% c("DIAG-ICD10","DIAG-ICD9")) %>%
@@ -570,18 +612,28 @@ plot_no_diag_day <- LocalPatientObservations %>%
 diag_no_day <- LocalPatientObservations %>%
   dplyr::filter(concept_type %in%  c("DIAG-ICD10","DIAG-ICD9")) %>%
   dplyr::group_by(GROUP) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(output[,c("value","GROUP")],by =c("GROUP"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="DIAG-ICD",
-                variable="number_patient",
+                variable="npat_nodiag",
                 periode_group="all")%>%
   data.frame()
 
 diag_no_day_p <- LocalPatientObservations %>%
   dplyr::filter( concept_type %in% c("DIAG-ICD10","DIAG-ICD9")) %>%
   dplyr::group_by(GROUP,periode_group) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(output[,c("value","GROUP")],by =c("GROUP"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="DIAG-ICD",
-                variable="number_patient")%>%
+                variable="npat_nodiag")%>%
   data.frame()
 
 output_gen=rbind(output_gen,diag_no_day,diag_no_day_p)
@@ -673,18 +725,28 @@ plot_no_proc_day <- LocalPatientObservations %>%
 proc_no_day <- LocalPatientObservations %>%
   dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
   dplyr::group_by(GROUP,days_since_admission) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="PROC-ICD",
-                variable="number_patient",
+                variable="npat_noproc",
                 periode_group="all")%>%
   data.frame()
 
 proc_no_day_p <- LocalPatientObservations %>%
   dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
   dplyr::group_by(GROUP,days_since_admission,periode_group) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="PROC-ICD",
-                variable="number_patient")%>%
+                variable="npat_noproc")%>%
   data.frame()
 
 output_day=rbind(output_day,proc_no_day,proc_no_day_p)
@@ -769,18 +831,28 @@ plot_no_lab_day <- LocalPatientObservations %>%
 lab_no_day <- LocalPatientObservations %>%
   dplyr::filter( concept_type =="LAB-LOINC") %>%
   dplyr::group_by(GROUP,days_since_admission) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="LAB-LOINC",
-                variable="number_patient",
+                variable="npat_nolab",
                 periode_group="all")%>%
   data.frame()
 
 lab_no_day_p <- LocalPatientObservations %>%
   dplyr::filter( concept_type =="LAB-LOINC") %>%
   dplyr::group_by(GROUP,days_since_admission,periode_group) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="LAB-LOINC",
-                variable="number_patient")%>%
+                variable="npat_nolab")%>%
   data.frame()
 
 output_day=rbind(output_day,lab_no_day,lab_no_day_p)
@@ -796,6 +868,7 @@ plot_no_lab_day
 
 
 ###Average number of medication per day 
+
 
 ```{R  message=FALSE, echo=FALSE}
 
@@ -865,25 +938,35 @@ plot_no_med_day <- LocalPatientObservations %>%
   ggplot(aes(x = days_since_admission, y = per_no,color = GROUP)) + 
   geom_line() +
   geom_point() + 
-  ylab(label = "percentage of patient without any labs")
+  ylab(label = "percentage of patient without any medication")
 
 
 ## output
 med_no_day <- LocalPatientObservations %>%
   dplyr::filter( concept_type =="MED-CLASS") %>%
   dplyr::group_by(GROUP,days_since_admission) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="MED-CLASS",
-                variable="number_patient",
+                variable="npat_nomed",
                 periode_group="all")%>%
   data.frame()
 
 med_no_day_p <- LocalPatientObservations %>%
   dplyr::filter( concept_type =="MED-CLASS") %>%
   dplyr::group_by(GROUP,days_since_admission,periode_group) %>%
-  dplyr::summarise(value=n_distinct(patient_num)) %>%
+  dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
+  dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
+  dplyr::mutate(count_pat=ifelse(is.na(count_pat),0,count_pat))%>%
+  dplyr::mutate(nodiag_npat=value-count_pat) %>%
+  dplyr::select(- c(value,count_pat)) %>%
+  dplyr::rename(value=nodiag_npat) %>%
   dplyr::mutate(concept="MED-CLASS",
-                variable="number_patient")%>%
+                variable="npat_nomed")%>%
   data.frame()
 
 output_day=rbind(output_day,med_no_day,med_no_day_p)
@@ -969,7 +1052,7 @@ plot_pao2_day
 ```
 
 
-**Distribution of number of Pa02 samples  per patient between 5 and 20 day of hospitalization  **
+**Distribution of number of Pa02 samples per patient between 5 and 20 day of hospitalization  **
   
 ```{R  message=FALSE, echo=FALSE}
 
@@ -1188,7 +1271,7 @@ output_gen=rbind(output_gen,sex,sex_p)
 ### output 
 
 pre_hospit<-  LocalPatientObservations %>%
-  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission< -6 ) %>%
+  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission <= limit_d_befor ) %>%
   dplyr::mutate(previous_hospi = "YES") %>%
   dplyr::select( patient_num, GROUP,previous_hospi) %>%
   unique()%>%
@@ -1202,7 +1285,7 @@ pre_hospit<-  LocalPatientObservations %>%
   data.frame()
 
 pre_hospit_p<-  LocalPatientObservations %>%
-  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission< -6 ) %>%
+  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission <= limit_d_befor ) %>%
   dplyr::mutate(previous_hospi = "YES") %>%
   dplyr::select( patient_num, GROUP,previous_hospi) %>%
   unique()%>%
@@ -1250,7 +1333,7 @@ comorb_elix_min7 <- map_char_elix_codes(
   df = LocalPatientObservations,
   comorb_names = comorb_names_elix,
   t1 = -365,
-  t2 = -7,
+  t2 = limit_d_befor,
   map_type = 'elixhauser',
   truncate = TRUE
 )
@@ -1324,7 +1407,7 @@ output_elix_min7_score <- LocalPatientSummary  %>%
   pivot_longer(comorbs_elix,names_to = "variable", values_to = "value")%>%
   dplyr::mutate(concept="elix",
                 periode_group="all",
-                time="min7")%>%
+                time="before")%>%
   data.frame()
   
 output_elix_min7_score_p <- LocalPatientSummary  %>%
@@ -1333,7 +1416,7 @@ output_elix_min7_score_p <- LocalPatientSummary  %>%
   dplyr::summarise(across(comorbs_elix, ~sum(.x, na.rm = TRUE)))%>%
   pivot_longer(comorbs_elix,names_to = "variable", values_to = "value")%>%
   dplyr::mutate(concept="elix",
-                time="min7")%>%
+                time="before")%>%
   data.frame()
 
 output_elix_90_score <- LocalPatientSummary  %>%
@@ -1343,7 +1426,7 @@ output_elix_90_score <- LocalPatientSummary  %>%
   pivot_longer(comorbs_elix,names_to = "variable", values_to = "value")%>%
   dplyr::mutate(concept="elix",
                 periode_group="all",
-                time="90")%>%
+                time="all")%>%
   data.frame()
   
 output_elix_90_score_p <- LocalPatientSummary  %>%
@@ -1352,7 +1435,7 @@ output_elix_90_score_p <- LocalPatientSummary  %>%
   dplyr::summarise(across(comorbs_elix, ~sum(.x, na.rm = TRUE)))%>%
   pivot_longer(comorbs_elix,names_to = "variable", values_to = "value")%>%
   dplyr::mutate(concept="elix",
-                time="90")%>%
+                time="all")%>%
   data.frame()
 
 
@@ -1360,6 +1443,18 @@ out_elix=rbind(output_elix_min7_score,output_elix_min7_score_p,output_elix_90_sc
 ```
 
 ```{R  message=FALSE, echo=FALSE}
+
+### manage ICD10 and 9 
+
+ICD=rbind(ICD10[,c("code","long_desc","major","sub_chapter","chapter")],
+          ICD9[,c("code","long_desc","major","sub_chapter","chapter")])
+
+
+diagnosis<-LocalPatientObservations %>%
+    dplyr::filter( concept_type %in% c("DIAG-ICD10","DIAG-ICD9" )) %>%
+    dplyr::left_join( ICD10[,c("code","long_desc","major","sub_chapter","chapter")],by =c( "concept_code" = "code"))%>%
+  data.frame()
+
 
 # all time 
 out_iCD_all <- LocalPatientObservations %>%
@@ -1385,7 +1480,7 @@ out_iCD_all_p <- LocalPatientObservations %>%
 # before time 
 out_iCD_before <- LocalPatientObservations %>%
   dplyr::filter( concept_type %in% c("DIAG-ICD10","DIAG-ICD9")) %>%
-  dplyr::filter( days_since_admission < 0) %>%
+  dplyr::filter( days_since_admission <= limit_d_befor) %>%
   dplyr::group_by(concept_code, GROUP, concept_type) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=concept_code,
@@ -1396,7 +1491,7 @@ out_iCD_before <- LocalPatientObservations %>%
 
 out_iCD_before_p <- LocalPatientObservations %>%
   dplyr::filter( concept_type  %in% c("DIAG-ICD10","DIAG-ICD9")) %>%
-  dplyr::filter( days_since_admission < 0) %>%
+  dplyr::filter( days_since_admission <= limit_d_befor) %>%
   dplyr::group_by(concept_code,concept_type, GROUP,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=concept_code,
@@ -1450,35 +1545,107 @@ out_iCD_after90_p <- LocalPatientObservations %>%
 
 out_iCD=rbind(out_iCD_all,out_iCD_before,out_iCD_after,out_iCD_after90,out_iCD_all_p,out_iCD_before_p,out_iCD_after_p,out_iCD_after90_p)
 
-### manage ICD10 and 9 
 
-ICD=rbind(ICD10[,c("code","long_desc","major","sub_chapter","chapter")],
-          ICD9[,c("code","long_desc","major","sub_chapter","chapter")])
+```
+
+```{R  message=FALSE, echo=FALSE}
+
+### add phenotype 
 
 
-diagnosis<-LocalPatientObservations %>%
+diag_pheno<-LocalPatientObservations %>%
     dplyr::filter( concept_type %in% c("DIAG-ICD10","DIAG-ICD9" )) %>%
-    dplyr::left_join( ICD10[,c("code","long_desc","major","sub_chapter","chapter")],by =c( "concept_code" = "code"))%>%
+    dplyr::left_join( pheno_ICD[,c("ICD","ICD.String","PheCode","Phenotype")],by =c( "concept_code" = "ICD"))%>%
   data.frame()
 
-# test_icd <-LocalPatientObservations %>%
-#   dplyr::filter( concept_type  %in% c("DIAG-ICD10","DIAG-ICD9"))%>%
-#   dplyr::select(concept_type)%>%
-#   unique()
-# 
-# if (test_icd=="DIAG-ICD10") {
-#   diagnosis<-LocalPatientObservations %>%
-#     dplyr::filter( concept_type =="DIAG-ICD10") %>%
-#     dplyr::left_join( ICD10[,c("code","long_desc","major","sub_chapter","chapter")],by =c( "concept_code" = "code"))
-#   
-# }
-# 
-# if (test_icd=="DIAG-ICD9") {
-#   diagnosis<-LocalPatientObservations %>%
-#     dplyr::filter( concept_type =="DIAG-ICD9") %>%
-#     dplyr::left_join( ICD9[,c("code","long_desc","major","sub_chapter","chapter")],by =c( "concept_code" = "code"))
-#   
-# }
+
+# all time 
+out_phe_all <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                periode_group="all",
+                time="all")%>%
+  data.frame()
+
+out_phe_all_p <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP,periode_group) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                time="all")%>%
+  data.frame()
+
+
+# before time  
+out_phe_before <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP) %>%
+  dplyr::filter( days_since_admission <= limit_d_befor) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                periode_group="all",
+                time="before")%>%
+  data.frame()
+
+out_phe_before_p <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP,periode_group) %>%
+  dplyr::filter( days_since_admission <= limit_d_befor) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                time="before")%>%
+  data.frame()
+
+# after time  
+out_phe_after <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP) %>%
+  dplyr::filter( days_since_admission >= 0) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                periode_group="all",
+                time="after")%>%
+  data.frame()
+
+out_phe_after_p <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP,periode_group) %>%
+  dplyr::filter( days_since_admission >= 0) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                time="after")%>%
+  data.frame()
+
+# after 90 days after admission time 
+out_phe_after90 <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP) %>%
+  dplyr::filter( days_since_admission >= 90) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                periode_group="all",
+                time="after_90")%>%
+  data.frame()
+
+out_phe_after90_p <-diag_pheno %>%
+  dplyr::group_by(PheCode, GROUP,periode_group) %>%
+  dplyr::filter( days_since_admission >= 90) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(concept=PheCode )%>%
+  dplyr::mutate(variable="PheCode",
+                time="after_90")%>%
+  data.frame()
+
+
+out_phe=rbind(out_phe_all,out_phe_before,out_phe_after,out_phe_after90,out_phe_all_p,out_phe_before_p,out_phe_after_p,out_phe_after90_p)
+
+
+```
+
+
+```{R  message=FALSE, echo=FALSE}
 
 
 ### medication 
@@ -1784,7 +1951,6 @@ status7_p <- LocalPatientClinicalCourse %>%
   dplyr::group_by(GROUP,status_at_d,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=status_at_d) %>%
-  dplyr::mutate(periode_group="all")%>%
   dplyr::mutate(concept="status_at_7")%>%
   data.frame()
 
@@ -1797,7 +1963,6 @@ status28_p <- LocalPatientClinicalCourse %>%
   dplyr::group_by(GROUP,status_at_d,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=status_at_d) %>%
-  dplyr::mutate(periode_group="all")%>%
   dplyr::mutate(concept="status_at_28")%>%
   data.frame()
 
@@ -1810,9 +1975,9 @@ status90_p <- LocalPatientClinicalCourse %>%
   dplyr::group_by(GROUP,status_at_d,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=status_at_d) %>%
-  dplyr::mutate(periode_group="all")%>%
   dplyr::mutate(concept="status_at_90")%>%
   data.frame()
+
 
 output_gen=rbind(output_gen,status7,status7_p,status28,status28_p,status90,status90_p)
 
@@ -1864,12 +2029,12 @@ sex
 
 
 **Patients with and without previous hospitalization in the year before **
-  **Number of Patients with and without ICD-10/9 in the year before **
+  **Number of Patients with and without ICD-10/9 between -365 and -8 day before the admission  **
   
 ```{R  message=FALSE, echo=FALSE}
 
 pre_hospit_risk <- LocalPatientObservations %>%
-  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission< -6 ) %>%
+  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission <= limit_d_befor ) %>%
   dplyr::mutate(previous_hospi = "YES") %>%
   dplyr::select( patient_num, GROUP,previous_hospi) %>%
   unique()%>%
@@ -1979,9 +2144,6 @@ plotICD_NOARDS
 For the 10 most frequent ICD-10/9 codes for the group NO ARDS 18-49, in x coordinate the frequency(%) of those code  for the group No ARDS 18-49 and in y coordinate the frequency(%) of those code for the group ARDS 18-49
 
 
-
-
-
 **Before hospitalization due to covid - Percentage of patients with ICD10/9 code**
   
 ```{R  message=FALSE, echo=FALSE}
@@ -1989,7 +2151,7 @@ For the 10 most frequent ICD-10/9 codes for the group NO ARDS 18-49, in x coordi
 if (length(n_ards_y)!=0 & length(n_no_y)!=0 ) {
   
 atcd_risk_per <- diagnosis%>%
-  dplyr::filter( days_since_admission < 0) %>%
+  dplyr::filter( days_since_admission <= limit_d_befor) %>%
   dplyr::group_by(concept_code, GROUP,long_desc) %>%
   dplyr::summarise(freq=n_distinct(patient_num))%>%
   dplyr::inner_join(num_pat,by = "GROUP")%>%
@@ -2097,8 +2259,6 @@ lab_risk
 
 
 ```
-
-
 
 
 # Treatment and outcomes : Comparison ARDS 18-49 versus ARDS  >50 
@@ -2295,8 +2455,6 @@ For the 10 ICD-10 with the greatest difference in term of frequency between ARDS
 
 
 
-
-
 **After hospitalization due to covid: Percentage of patients with ICD10/9  **
   
 ```{R  message=FALSE, echo=FALSE}
@@ -2438,6 +2596,7 @@ plot_status28 <-status28%>%
 plot_status28
 
 ```
+
 **Status at 90 days after admission **
 
 ```{R  message=FALSE, echo=FALSE}
@@ -2522,14 +2681,14 @@ plotsex
 
 ##  Hospitalization  
 
-**Previous hospitalization in the year before:**
-  **Number of Patients with and without ICD-10 in the year before **
+**Patients with and without previous hospitalization in the year before **
+**Number of Patients with and without ICD-10/9 between -365 and -8 day before the admission  **
   
   
 ```{R  message=FALSE, echo=FALSE}
 
 plot_pre_hospit <- LocalPatientObservations %>%
-  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission< -6 ) %>%
+  dplyr::filter(concept_type %in% c("DIAG-ICD10","DIAG-ICD9") & days_since_admission <= limit_d_befor ) %>%
   dplyr::mutate(previous_hospi = "YES") %>%
   dplyr::select( patient_num, GROUP,previous_hospi) %>%
   unique()%>%
@@ -2565,7 +2724,7 @@ plot_rehosp
 
 ##  ICD-10/9
 
-### Elix score for commorbities comprises between -365 and -7 
+### Elix score for commorbities comprises between -365 and -8 
 
 ```{R  message=FALSE, echo=FALSE}
 
@@ -2592,7 +2751,7 @@ plot_elix_90 <- LocalPatientSummary  %>%
 plot(plot_elix_90)
 ```
 
-### Elix  commorbities comprises between -365 and -7 in number  
+### Elix  commorbities comprises between -365 and -8 in number  
   
 ```{R  message=FALSE, echo=FALSE}
 
@@ -2704,15 +2863,13 @@ compli_per <- diagnosis%>%
 compli_per %>% datatable(rownames = FALSE)
 ```
 
-##  Pheno-10
+##  Pheno
 
-**Number of patients with ICD10 after hospitalization due to covid  **
+**Number of patients with pheno code after hospitalization due to covid  **
   
 ```{R  message=FALSE, echo=FALSE}
 
-  compli_phe <- LocalPatientObservations %>%
-    dplyr::filter( concept_type =="DIAG-ICD10") %>%
-    dplyr::left_join( pheno10_ICD10[,c("ICD10","PheCode","Phenotype")],by =c( "concept_code" = "ICD10"))%>%
+  compli_phe <- diag_pheno %>%
     dplyr::filter( days_since_admission >= 0) %>%
     dplyr::group_by(PheCode, GROUP,Phenotype) %>%
     dplyr::summarise(freq=n_distinct(patient_num))%>%
@@ -2721,6 +2878,7 @@ compli_per %>% datatable(rownames = FALSE)
   
   compli_phe %>% datatable(rownames = FALSE)
 
+  
 ```
 
 
@@ -2826,6 +2984,8 @@ plot_status28 <-status28%>%
 plot_status28
 
 ```
+
+
 **Status at 90 days after admission **
 
 ```{R  message=FALSE, echo=FALSE}
@@ -2858,7 +3018,7 @@ output_lab <- output_lab %>%
   dplyr::mutate(std_value = ifelse(npat == 1, 0, std_value),
                 std_log_value = ifelse(npat == 1, 0, std_log_value))
 
-var_gen_num = c("number","n_severe" ,"26to49","50to69","70to79","80plus","18to25","female","male","no_previous_hospi","previous_hospi","no_rehospit","rehospit","dead","dead_less_28","dead_less_90","out_hospit_28","out_hospit_90")  
+var_gen_num = c("number","n_severe" ,"26to49","50to69","70to79","80plus","18to25","female","male","no_previous_hospi","previous_hospi","no_rehospit","rehospit","dead","dead_less_28","dead_less_90","out_hospit_28","out_hospit_90","in_hospital", "death", "out_hospital","no_data")  
 
 var_gen_ag =c("mean_freq","std_freq", "mean_los", "std_los")
 
