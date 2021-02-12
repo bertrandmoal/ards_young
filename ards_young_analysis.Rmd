@@ -1552,7 +1552,6 @@ out_iCD=rbind(out_iCD_all,out_iCD_before,out_iCD_after,out_iCD_after90,out_iCD_a
 
 ### add phenotype 
 
-
 diag_pheno<-LocalPatientObservations %>%
     dplyr::filter( concept_type %in% c("DIAG-ICD10","DIAG-ICD9" )) %>%
     dplyr::left_join( pheno_ICD[,c("ICD","ICD.String","PheCode","Phenotype")],by =c( "concept_code" = "ICD"))%>%
@@ -1563,8 +1562,8 @@ diag_pheno<-LocalPatientObservations %>%
 out_phe_all <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 periode_group="all",
                 time="all")%>%
   data.frame()
@@ -1572,8 +1571,8 @@ out_phe_all <-diag_pheno %>%
 out_phe_all_p <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 time="all")%>%
   data.frame()
 
@@ -1583,8 +1582,8 @@ out_phe_before <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP) %>%
   dplyr::filter( days_since_admission <= limit_d_befor) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 periode_group="all",
                 time="before")%>%
   data.frame()
@@ -1593,8 +1592,8 @@ out_phe_before_p <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP,periode_group) %>%
   dplyr::filter( days_since_admission <= limit_d_befor) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 time="before")%>%
   data.frame()
 
@@ -1603,8 +1602,8 @@ out_phe_after <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP) %>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 periode_group="all",
                 time="after")%>%
   data.frame()
@@ -1613,8 +1612,8 @@ out_phe_after_p <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP,periode_group) %>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 time="after")%>%
   data.frame()
 
@@ -1623,8 +1622,8 @@ out_phe_after90 <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP) %>%
   dplyr::filter( days_since_admission >= 90) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 periode_group="all",
                 time="after_90")%>%
   data.frame()
@@ -1633,13 +1632,16 @@ out_phe_after90_p <-diag_pheno %>%
   dplyr::group_by(PheCode, GROUP,periode_group) %>%
   dplyr::filter( days_since_admission >= 90) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
-  dplyr::rename(concept=PheCode )%>%
-  dplyr::mutate(variable="PheCode",
+  dplyr::rename(variable=PheCode )%>%
+  dplyr::mutate(concept="PheCode",
                 time="after_90")%>%
   data.frame()
 
 
-out_phe=rbind(out_phe_all,out_phe_before,out_phe_after,out_phe_after90,out_phe_all_p,out_phe_before_p,out_phe_after_p,out_phe_after90_p)
+out_phe=rbind(out_phe_all,out_phe_all_p,
+              out_phe_before,out_phe_before_p,
+              out_phe_after,out_phe_after_p,
+              out_phe_after90,out_phe_after90_p)
 
 
 ```
