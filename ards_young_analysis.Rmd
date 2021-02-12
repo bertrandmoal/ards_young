@@ -1827,7 +1827,7 @@ out_proc_after90_p <- LocalPatientObservations %>%
 
 out_proc=rbind(out_proc_all,out_proc_before,out_proc_after,out_proc_after90,out_proc_all_p,out_proc_before_p,out_proc_after_p,out_proc_after90_p)
 
-out_proc_diag_med=rbind(out_iCD,out_proc,out_med,out_elix)
+out_proc_diag_med=rbind(out_iCD,out_proc,out_med,out_elix,out_phe)
 
 ###  Lab -- output 
 
