@@ -15,6 +15,9 @@ knit: (function(inputFile, encoding) {
 ```{r setup, warning=FALSE, message=FALSE, echo=FALSE}
 rm(list = ls())
 
+
+#devtools::install_github('jackwasey/icd')
+
 library(dplyr)
 library(tidyr)
 library(tidyverse)
@@ -27,9 +30,7 @@ library(Gmisc)
 library(DT)
 library(kableExtra)
 library(caret)
-
-devtools::install_github('jackwasey/icd')
-
+library(icd)
 
 source("R/comorbidity-map-funcs.R")
 
@@ -47,9 +48,9 @@ source("R/comorbidity-map-funcs.R")
 ## change the path to load the phase 2 files  
 
 
-LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
-LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
-LocalPatientSummary=read.csv("/LocalPatientSummary.csv", na.strings = "1900-01-01")
+LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/january2021/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
+LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/january2021/LocalPatientObservations.csv",na.strings = '-999')
+LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/january2021/LocalPatientSummary.csv", na.strings = "1900-01-01")
 
 ## obfuscation
 
@@ -85,11 +86,11 @@ ICD10=icd.data::icd10cm2016 %>%
 ICD9=icd.data::icd9cm_hierarchy %>%
   dplyr::mutate(code=as.factor(code))
 
-### load pheno_code 
+### load pheno_code with ICD10
 pheno10_ICD10=read.csv("doc/phecode_icd10.csv")
 pheno10_ICD10$ICD10=str_replace_all(pheno10_ICD10$ICD10, "\\.", "")
 
-### load pheno_code 
+### load pheno_code with ICD9
 pheno_ICD9=read.csv("doc/phecode_icd9_rolled.csv", sep = ",")
 pheno_ICD9 <- pheno_ICD9%>%
   dplyr::select(-c("Rollup","Leaf","Ignore.Bool"))%>%
@@ -101,6 +102,9 @@ pheno10_ICD10 <- pheno10_ICD10%>%
          ICD=ICD10)
 
 pheno_ICD = rbind(pheno_ICD9,pheno10_ICD10)
+
+### load complication class
+comp_class <- read_csv2('doc/complication_class.csv')
 
 ## load procedure 
 sev_proc_icd10 <- read_csv('doc/sev_proc_icd10.csv')
@@ -1649,6 +1653,64 @@ out_phe=rbind(out_phe_all,out_phe_all_p,
 
 ```{R  message=FALSE, echo=FALSE}
 
+### add phenotype 
+
+diag_comp<-LocalPatientObservations %>%
+    dplyr::filter( concept_type == "DIAG-ICD10") %>%
+    dplyr::left_join( comp_class,by =c( "concept_code" = "ICD10"))%>%
+  data.frame()
+
+
+# after time  
+out_comp_after <-diag_comp %>%
+  dplyr::group_by(complication_class, GROUP) %>%
+  dplyr::filter( days_since_admission >= 0) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(variable=complication_class )%>%
+  dplyr::mutate(concept="complication_class",
+                periode_group="all",
+                time="after")%>%
+  data.frame()
+
+out_comp_after_p <-diag_comp %>%
+  dplyr::group_by(complication_class, GROUP,periode_group) %>%
+  dplyr::filter( days_since_admission >= 0) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(variable=complication_class )%>%
+  dplyr::mutate(concept="complication_class",
+                time="after")%>%
+  data.frame()
+
+# after 90 days after admission time 
+out_comp_after90 <-diag_comp %>%
+  dplyr::group_by(complication_class, GROUP) %>%
+  dplyr::filter( days_since_admission >= 90) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(variable=complication_class )%>%
+  dplyr::mutate(concept="complication_class",
+                periode_group="all",
+                time="after_90")%>%
+  data.frame()
+
+out_comp_after90_p <-diag_comp %>%
+  dplyr::group_by(complication_class, GROUP,periode_group) %>%
+  dplyr::filter( days_since_admission >= 90) %>%
+  dplyr::summarise(value=n_distinct(patient_num))%>%
+  dplyr::rename(variable=complication_class )%>%
+  dplyr::mutate(concept="complication_class",
+                time="after_90")%>%
+  data.frame()
+
+
+out_comp=rbind(out_comp_after,out_comp_after_p,
+              out_comp_after90,out_comp_after90_p)
+
+
+```
+
+
+```{R  message=FALSE, echo=FALSE}
+
 
 ### medication 
 # all time 
@@ -1829,7 +1891,7 @@ out_proc_after90_p <- LocalPatientObservations %>%
 
 out_proc=rbind(out_proc_all,out_proc_before,out_proc_after,out_proc_after90,out_proc_all_p,out_proc_before_p,out_proc_after_p,out_proc_after90_p)
 
-out_proc_diag_med=rbind(out_iCD,out_proc,out_med,out_elix,out_phe)
+out_proc_diag_med=rbind(out_iCD,out_proc,out_med,out_elix,out_phe,out_comp)
 
 ###  Lab -- output 
 
@@ -1984,6 +2046,7 @@ status90_p <- LocalPatientClinicalCourse %>%
 output_gen=rbind(output_gen,status7,status7_p,status28,status28_p,status90,status90_p)
 
 ```
+
 
 
 # Risk factor analysis: Comparison ARDS 18-49 versus No ARDS  18-49  
@@ -2762,7 +2825,7 @@ comorb_names_elix <- comorb_names_elix%>%
   
 
 out_elix_table_min7 <- out_elix%>%
-  dplyr::filter( time == "min7") %>%
+  dplyr::filter( time == "before") %>%
   dplyr::inner_join(comorb_names_elix, by = "variable")%>%
   dplyr::select(Comorbidity,value ,GROUP)%>%
   group_by(GROUP) %>%
@@ -2779,7 +2842,7 @@ out_elix_table_min7 %>% datatable(rownames = FALSE)
 
 
 out_elix_table_90 <- out_elix%>%
-  dplyr::filter( time == "90") %>%
+  dplyr::filter( time == "all") %>%
   dplyr::inner_join(num_pat,by = "GROUP")%>%
   dplyr::mutate(per = round(100*value/npat,1))%>%
   dplyr::inner_join(comorb_names_elix, by = "variable")%>%
@@ -2867,7 +2930,7 @@ compli_per %>% datatable(rownames = FALSE)
 
 ##  Pheno
 
-**Number of patients with pheno code after hospitalization due to covid  **
+**Percentage of patients with pheno code after hospitalization due to covid  **
   
 ```{R  message=FALSE, echo=FALSE}
 
@@ -2875,13 +2938,38 @@ compli_per %>% datatable(rownames = FALSE)
     dplyr::filter( days_since_admission >= 0) %>%
     dplyr::group_by(PheCode, GROUP,Phenotype) %>%
     dplyr::summarise(freq=n_distinct(patient_num))%>%
-    pivot_wider(names_from = GROUP,names_sep = ".", values_from = freq,names_repair = "check_unique")%>%
+    dplyr::inner_join(num_pat,by = "GROUP")%>%
+    dplyr::mutate(per = round(100*freq/npat,1))%>%
+    dplyr::select(PheCode,Phenotype,GROUP,per)%>%
+    pivot_wider(names_from = GROUP,names_sep = ".", values_from = per,names_repair = "check_unique")%>%
     dplyr::filter(!is.na(Phenotype))
   
   compli_phe %>% datatable(rownames = FALSE)
 
   
 ```
+
+##  Complication class
+
+**Percentage of patients with pheno code after hospitalization due to covid  **
+  
+```{R  message=FALSE, echo=FALSE}
+
+  compli_comp <- diag_comp %>%
+    dplyr::filter( days_since_admission >= 0) %>%
+    dplyr::group_by(complication_class, GROUP) %>%
+    dplyr::summarise(freq=n_distinct(patient_num))%>%
+    dplyr::inner_join(num_pat,by = "GROUP")%>%
+    dplyr::mutate(per = round(100*freq/npat,1))%>%
+    dplyr::select(complication_class,GROUP,per)%>%
+    pivot_wider(names_from = GROUP,names_sep = ".", values_from = per,names_repair = "check_unique")%>%
+    dplyr::filter(!is.na(complication_class))
+  
+  compli_comp %>% datatable(rownames = FALSE)
+
+  
+```
+
 
 
 ##  Medication
