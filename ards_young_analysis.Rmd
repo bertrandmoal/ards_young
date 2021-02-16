@@ -48,9 +48,9 @@ source("R/comorbidity-map-funcs.R")
 ## change the path to load the phase 2 files  
 
 
-LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/january2021/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
-LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/january2021/LocalPatientObservations.csv",na.strings = '-999')
-LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/january2021/LocalPatientSummary.csv", na.strings = "1900-01-01")
+LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
+LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
+LocalPatientSummary=read.csv("/LocalPatientSummary.csv", na.strings = "1900-01-01")
 
 ## obfuscation
 
