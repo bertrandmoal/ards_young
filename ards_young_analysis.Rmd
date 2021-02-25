@@ -48,6 +48,7 @@ source("R/comorbidity-map-funcs.R")
 ## change the path to load the phase 2 files  
 
 
+
 LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
 LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
 LocalPatientSummary=read.csv("/LocalPatientSummary.csv", na.strings = "1900-01-01")
@@ -104,16 +105,16 @@ pheno10_ICD10 <- pheno10_ICD10%>%
 pheno_ICD = rbind(pheno_ICD9,pheno10_ICD10)
 
 ### load complication class
-comp_class <- read_csv2('doc/complication_class.csv')
+comp_class <- read.csv(paste0('doc/complication_class.csv'),sep = ";")
 
 ## load procedure 
-sev_proc_icd10 <- read_csv('doc/sev_proc_icd10.csv')
+sev_proc_icd10 <- read.csv('doc/sev_proc_icd10.csv')
 
 ## load lab 
-lab_mapping <- read_csv('doc/4CE_loinc.csv')
+lab_mapping <- read.csv('doc/4CE_loinc.csv')
 
 ## load medication
-med_code= read_csv("doc/4CE_medication.csv")
+med_code= read.csv("doc/4CE_medication.csv")
 
 
 ## input ### 
@@ -254,6 +255,7 @@ LocalPatientClinicalCourse <- LocalPatientClinicalCourse %>%
   dplyr::filter( patient_num %in% LocalPatientSummary$patient_num) %>%
   dplyr::left_join(LocalPatientSummary[,c("patient_num","periode_group","GROUP","ARDS","PROC_SEVERE","MED_SEVERE")])%>%
   dplyr::mutate(calendar_date = as.POSIXct(calendar_date))
+
 
 ```
 
