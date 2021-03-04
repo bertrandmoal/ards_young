@@ -31,6 +31,7 @@ library(DT)
 library(kableExtra)
 library(caret)
 library(icd)
+library(stringr)
 
 source("R/comorbidity-map-funcs.R")
 
@@ -47,19 +48,17 @@ source("R/comorbidity-map-funcs.R")
 ####### load input file 
 ## change the path to load the phase 2 files  
 
-
-
-LocalPatientClinicalCourse=read.csv("/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
-LocalPatientObservations=read.csv("/LocalPatientObservations.csv",na.strings = '-999')
-LocalPatientSummary=read.csv("/LocalPatientSummary.csv", na.strings = "1900-01-01")
+LocalPatientClinicalCourse=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/february2021/LocalPatientClinicalCourse.csv", na.strings = "1900-01-01")
+LocalPatientObservations=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/february2021/LocalPatientObservations.csv",na.strings = '-999')
+LocalPatientSummary=read.csv("//Zisilon03/N03iam1/INTERNES/BertrandMoal/covid19/covid_19/code/4c/phase_1_1/phase2/output/february2021/LocalPatientSummary.csv", na.strings = "1900-01-01")
 
 ## obfuscation
 
 ## indicate if there is an obfuscation required ( TRUE or FALSE)
-obfusquation <- TRUE
+obfuscation <- TRUE
 
 ##  if YES what is the level of obfuscation 
-obfuscationThreeshord <- 3
+obfuscationThreshord <- 3
 ####### 
 ```
 
@@ -3118,18 +3117,18 @@ var_gen_ag =c("mean_freq","std_freq", "mean_los", "std_los")
 
 ## add obfuscation 
 
-obfusc=data.frame("siteid" = siteid, "truefalse" = obfusquation, "value" = obfuscationThreeshord)
+obfusc=data.frame("siteid" = siteid, "truefalse" = obfuscation, "value" = obfuscationThreshord)
 
-if(obfusquation){
+if(obfuscation){
   
   group_less_obf <- output_gen %>%
-    dplyr::filter(variable =="number" &  value< obfuscationThreeshord)%>%
+    dplyr::filter(variable =="number" &  value< obfuscationThreshord)%>%
     dplyr::select(GROUP,periode_group)  
   
   output_gen <- output_gen %>%
     dplyr::mutate(
       value = ifelse(
-        test = variable %in% var_gen_num &  value < obfuscationThreeshord & value != 0,
+        test = variable %in% var_gen_num &  value < obfuscationThreshord & value != 0,
         yes = obfuscationValue, no = value),
       value = ifelse(
         test = (GROUP %in% group_less_obf$GROUP) & (periode_group %in% group_less_obf$periode_group) & (variable %in% var_gen_ag),
@@ -3138,31 +3137,31 @@ if(obfusquation){
   output_day <- output_day %>%
     dplyr::mutate(
       value = ifelse(
-        test = value < obfuscationThreeshord & value != 0 & variable == "number",
+        test = value < obfuscationThreshord & value != 0 & variable == "number",
         yes = obfuscationValue, no = value))
   
   out_proc_diag_med <- out_proc_diag_med %>%
     dplyr::mutate(
       value = ifelse(
-        test = value < obfuscationThreeshord & value != 0,
+        test = value < obfuscationThreshord & value != 0,
         yes = obfuscationValue, no = value))
   
   output_lab <- output_lab %>%
     dplyr::mutate(
       npat = ifelse(
-        test = npat < obfuscationThreeshord & npat != 0,
+        test = npat < obfuscationThreshord & npat != 0,
         yes = obfuscationValue, no = npat),
       mean_value = ifelse(
-        test = npat < obfuscationThreeshord & npat != 0,
+        test = npat < obfuscationThreshord & npat != 0,
         yes = obfuscationValue, no = mean_value),
       std_value= ifelse(
-        test = npat < obfuscationThreeshord & npat != 0,
+        test = npat < obfuscationThreshord & npat != 0,
         yes = obfuscationValue, no = std_value),
       mean_log_value= ifelse(
-        test = npat < obfuscationThreeshord & npat != 0,
+        test = npat < obfuscationThreshord & npat != 0,
         yes = obfuscationValue, no = mean_log_value),
       std_log_value= ifelse(
-        test = npat < obfuscationThreeshord & npat != 0,
+        test = npat < obfuscationThreshord & npat != 0,
         yes = obfuscationValue, no = std_log_value))
   
 }
