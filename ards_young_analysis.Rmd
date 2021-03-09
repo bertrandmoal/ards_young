@@ -120,6 +120,7 @@ med_code= read.csv("doc/4CE_medication.csv")
 med_severe = c("SIANES","SICARDIAC")
 loinc_pao2 = "2703-7"
 ARDS=c('J80','518.82')
+proc_cpt= c("CPT4:31500","CPT4:94656","CPT4:94657","CPT4:94002")
 
 
 # P1 : january - july 
@@ -222,9 +223,12 @@ pat_ARDS <- LocalPatientObservations %>%
 ### patients with ventilation
 pat_vent <- LocalPatientObservations %>%
   dplyr::filter( patient_num %in% LocalPatientSummary$patient_num) %>%
-  dplyr::filter(concept_type == "PROC-ICD10"
+  dplyr::filter((concept_type == "PROC-ICD10"
                 & days_since_admission >=0
-                & concept_code %in% sev_proc_icd10$code) %>%
+                & concept_code %in% sev_proc_icd10$code)
+                |(concept_type == "PROC-CPT"
+                & days_since_admission >=0
+                & concept_code %in% proc_cpt) )%>%
   dplyr::select(patient_num)%>%
   dplyr::distinct()%>%
   data.frame()
@@ -664,7 +668,7 @@ plot_no_diag_day
 ```{R  message=FALSE, echo=FALSE}
 
 plot_proc_day <- LocalPatientObservations %>%
-  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
   dplyr::summarise(count_proc=n()) %>%
   dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
@@ -679,7 +683,7 @@ plot_proc_day <- LocalPatientObservations %>%
 
 ## output
 proc_day <- LocalPatientObservations %>%
-  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission) %>%
   dplyr::summarise(count_proc=n()) %>%
   dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
@@ -692,7 +696,7 @@ proc_day <- LocalPatientObservations %>%
   data.frame()
 
 proc_day_p <- LocalPatientObservations %>%
-  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::group_by(patient_num,GROUP,days_since_admission,periode_group) %>%
   dplyr::summarise(count_proc=n()) %>%
   dplyr::right_join(LocalPatientClinicalCourse[,c("patient_num","GROUP","days_since_admission")],by =c("patient_num","GROUP","days_since_admission"))%>%
@@ -722,7 +726,7 @@ npat_day_all<- output_day%>%
 
   
 plot_no_proc_day <- LocalPatientObservations %>%
-  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::group_by(GROUP,days_since_admission) %>%
   dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
   dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
@@ -737,7 +741,7 @@ plot_no_proc_day <- LocalPatientObservations %>%
 
 ## output
 proc_no_day <- LocalPatientObservations %>%
-  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::group_by(GROUP,days_since_admission) %>%
   dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
   dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
@@ -751,7 +755,7 @@ proc_no_day <- LocalPatientObservations %>%
   data.frame()
 
 proc_no_day_p <- LocalPatientObservations %>%
-  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9")) %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::group_by(GROUP,days_since_admission,periode_group) %>%
   dplyr::summarise(count_pat=n_distinct(patient_num)) %>%
   dplyr::right_join(npat_day_all[,c("value","GROUP","days_since_admission")],by =c("GROUP","days_since_admission"))%>%
@@ -1819,7 +1823,7 @@ out_med=rbind(out_med_all,out_med_before,out_med_after,out_med_after90,out_med_a
 
 # all time 
 out_proc_all <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10") %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT"))%>%
   dplyr::group_by(concept_code, GROUP, concept_type) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=concept_code,
@@ -1829,7 +1833,7 @@ out_proc_all <- LocalPatientObservations %>%
   data.frame()
 
 out_proc_all_p <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10")  %>%
+  dplyr::filter( concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::group_by(concept_code,concept_type, GROUP,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
   dplyr::rename(variable=concept_code,
@@ -1839,7 +1843,7 @@ out_proc_all_p <- LocalPatientObservations %>%
 
 # before time 
 out_proc_before <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10") %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::filter( days_since_admission < 0) %>%
   dplyr::group_by(concept_code, GROUP, concept_type) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
@@ -1850,7 +1854,7 @@ out_proc_before <- LocalPatientObservations %>%
   data.frame()
 
 out_proc_before_p <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10")  %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT"))  %>%
   dplyr::filter( days_since_admission < 0) %>%
   dplyr::group_by(concept_code,concept_type, GROUP,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
@@ -1861,7 +1865,7 @@ out_proc_before_p <- LocalPatientObservations %>%
 
 # after time 
 out_proc_after <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10")  %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT"))  %>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::group_by(concept_code, GROUP, concept_type) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
@@ -1872,7 +1876,7 @@ out_proc_after <- LocalPatientObservations %>%
   data.frame()
 
 out_proc_after_p <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10") %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT")) %>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::group_by(concept_code,concept_type, GROUP,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
@@ -1883,7 +1887,7 @@ out_proc_after_p <- LocalPatientObservations %>%
 
 # after 90 days after admission time 
 out_proc_after90 <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10")  %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT"))  %>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::group_by(concept_code, GROUP, concept_type) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
@@ -1894,7 +1898,7 @@ out_proc_after90 <- LocalPatientObservations %>%
   data.frame()
 
 out_proc_after90_p <- LocalPatientObservations %>%
-  dplyr::filter( concept_type =="PROC-ICD10")  %>%
+  dplyr::filter(concept_type %in% c("PROC-ICD10","PROC-ICD9","PROC-CPT"))  %>%
   dplyr::filter( days_since_admission >= 0) %>%
   dplyr::group_by(concept_code,concept_type, GROUP,periode_group) %>%
   dplyr::summarise(value=n_distinct(patient_num))%>%
@@ -2591,12 +2595,10 @@ med %>% datatable(rownames = FALSE)
 
 ##  Procedure
 
-**Number of patient with at least one procedure per medication procedure**
+**Number of patient with at least one procedure (only considering PROC-ICD10)**
   
   
 ```{R  message=FALSE, echo=FALSE}
-
-#function to read multiple excel file with multiple sheet 
 
 procedure <- LocalPatientObservations %>%
   dplyr::filter( concept_type =="PROC-ICD10") %>%
@@ -3009,7 +3011,7 @@ med %>% datatable(rownames = FALSE)
 
 ##  Procedure
 
-**Number of patient with at least one procedure per procedure**
+**Number of patient with at least one procedure ( PROC-ICD10 only ) **
   
 ```{R  message=FALSE, echo=FALSE}
 
@@ -3183,12 +3185,12 @@ if(obfuscation){
 
 
 
-write.csv(output_gen, file =paste("output/ards_young_gen-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(output_day, file =paste("output/ards_young_day-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(output_lab, file =paste("output/ards_young_lab-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(out_proc_diag_med, file =paste("output/ards_young_proc_diag_med-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(obfusc, file =paste("output/obfusc-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
-write.csv(output_sens, file =paste("output/sens-",siteid,".csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_gen, file =paste("output/",siteid,"_ards_young_gen.csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_day, file =paste("output/",siteid,"_ards_young_day.csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_lab, file =paste("output/",siteid,"_ards_young_lab.csv",sep = ""), row.names = FALSE, na = "")
+write.csv(out_proc_diag_med, file =paste("output/",siteid,"_ards_young_proc_diag_med.csv",sep = ""), row.names = FALSE, na = "")
+write.csv(obfusc, file =paste("output/",siteid,"_obfusc.csv",sep = ""), row.names = FALSE, na = "")
+write.csv(output_sens, file =paste("output/",siteid,"_sens.csv",sep = ""), row.names = FALSE, na = "")
 
 
 ```
